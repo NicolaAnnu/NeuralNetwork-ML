@@ -24,7 +24,7 @@ class Neuron:
         self.learning_rate = learning_rate
         self.max_iter = max_iter
 
-    def train(self, X: np.ndarray, y: np.ndarray) -> None:
+    def train(self, X: np.ndarray, y: np.ndarray) -> np.ndarray:
         # randomly initialize weights and bias
         self.W = np.random.random(X.shape[1])
         self.b = np.random.random()
@@ -32,7 +32,7 @@ class Neuron:
         # get the activation function from the dictionary
         activation = activation_functions[self.activation]
 
-        self.loss = np.zeros(self.max_iter)  # to track the loss
+        loss = np.zeros(self.max_iter)  # to track the loss
 
         for epoch in range(self.max_iter):
             epoch_loss = 0.0  # loss accumulator
@@ -54,7 +54,9 @@ class Neuron:
 
                 epoch_loss += np.pow(error, 2)
 
-            self.loss[epoch] += epoch_loss / len(y)
+            loss[epoch] += epoch_loss / len(y)
+
+        return loss
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         return np.round(logistic(self.b + (X @ self.W)))
