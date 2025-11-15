@@ -48,7 +48,7 @@ class Neuron:
                 weights_gradient = 2 * error * activation[1](net) * X[i]
                 bias_gradient = 2 * error * activation[1](net)
 
-                # update weigths and bias through learning rule
+                # update weights and bias through learning rule
                 self.W -= self.learning_rate * weights_gradient
                 self.b -= self.learning_rate * bias_gradient
 
