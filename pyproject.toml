@@ -12,7 +12,7 @@ description = "Neural Network"
 #     { name = "Domenico", surname="Benedetto" }
 # ]
 
-dependencies = ["numpy", "scipy", "matplotlib", "pandas"]
+dependencies = ["numpy", "scipy"]
 
 [tool.setuptools.packages.find]
 where = ["."]
