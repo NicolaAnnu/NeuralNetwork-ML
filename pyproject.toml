@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "network" # nome del pacchetto
+version = "0.0.1"
+description = "Neural Network"
+# authors = [
+#     { name = "Federico", surname="Bustaffa" email = "kiko.bustaffa@gmail.com" },
+#     { name = "Nicola", surname="Annunziata" },
+#     { name = "Domenico", surname="Benedetto" }
+# ]
+
+dependencies = ["numpy", "scipy", "matplotlib", "pandas"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["network"]
