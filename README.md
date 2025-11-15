@@ -10,8 +10,8 @@ virtual environment:
 
 ```bash
 python -m venv .env # to create it
-source .env/bin/activate # on Linux
-.env/Scripts/activate.bat # on Windows
+source .env/bin/activate # to enable it on Linux
+.env/Scripts/activate.bat # to enable it on Windows
 ```
 
 then it's necessary to install the requirements in `requirements.txt` via `pip`
