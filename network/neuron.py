@@ -1,16 +1,6 @@
 import numpy as np
 
-
-def logistic(x):
-    return 1 / (1 + np.exp(-x))
-
-
-def logistic_derivative(x):
-    logit = logistic(x)
-    return logit * (1 - logit)
-
-
-activation_functions = {"logistic": (logistic, logistic_derivative)}
+from network.activations import activations
 
 
 class Neuron:
@@ -30,7 +20,7 @@ class Neuron:
         self.b = np.random.random()
 
         # get the activation function from the dictionary
-        activation = activation_functions[self.activation]
+        activation = activations[self.activation]
 
         loss = np.zeros(self.max_iter)  # to track the loss
 
@@ -59,4 +49,5 @@ class Neuron:
         return loss
 
     def predict(self, X: np.ndarray) -> np.ndarray:
-        return np.round(logistic(self.b + (X @ self.W)))
+        activation = activations[self.activation]
+        return activation[0](self.b + (X @ self.W))
