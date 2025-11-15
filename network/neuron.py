@@ -10,33 +10,34 @@ class Neuron:
         learning_rate: float = 0.01,
         max_iter: int = 200,
     ) -> None:
-        self.activation = activation
+        self.activation = activations[activation]
         self.learning_rate = learning_rate
         self.max_iter = max_iter
 
-    def train(self, X: np.ndarray, y: np.ndarray) -> np.ndarray:
+    def init_weights(self, n: int):
         # randomly initialize weights and bias
-        self.W = np.random.random(X.shape[1])
+        self.W = np.random.random(n)
         self.b = np.random.random()
 
-        # get the activation function from the dictionary
-        activation = activations[self.activation]
+    def train(self, X: np.ndarray, y: np.ndarray) -> None:
+        self.init_weights(X.shape[1])
 
-        loss = np.zeros(self.max_iter)  # to track the loss
+        self.loss_curve = []  # to track the loss
 
         for epoch in range(self.max_iter):
+            self.loss_curve.append(0.0)
             epoch_loss = 0.0  # loss accumulator
             for i in range(len(y)):
                 # compute the scalar product (b + w^T x)
                 net = self.b + (self.W @ X[i])
-                out = activation[0](net)
+                out = self.activation[0](net)
 
                 # compute the error on the i-th pattern
                 error = out - y[i]
 
                 # compute gradients
-                weights_gradient = 2 * error * activation[1](net) * X[i]
-                bias_gradient = 2 * error * activation[1](net)
+                weights_gradient = 2 * error * self.activation[1](net) * X[i]
+                bias_gradient = 2 * error * self.activation[1](net)
 
                 # update weights and bias through learning rule
                 self.W -= self.learning_rate * weights_gradient
@@ -44,10 +45,11 @@ class Neuron:
 
                 epoch_loss += np.pow(error, 2)
 
-            loss[epoch] += epoch_loss / len(y)
-
-        return loss
+            self.loss_curve[epoch] += epoch_loss / len(y)
 
     def predict(self, X: np.ndarray) -> np.ndarray:
-        activation = activations[self.activation]
-        return activation[0](self.b + (X @ self.W))
+        return self.activation[0](self.b + X @ self.W)
+
+    @property
+    def loss(self):
+        return self.loss_curve[-1]
