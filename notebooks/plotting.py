@@ -75,7 +75,7 @@ def loss_decision_boundary(loss1, loss2, X, y, model1, model2):
     grid = np.c_[xx.ravel(), yy.ravel()]
 
     # Predictions
-    Z1 = model1.predict(grid).reshape(xx.shape)
+    Z1 = model1.output(grid).reshape(xx.shape)
     Z2 = model2.predict(grid).reshape(xx.shape)
 
     # Plot ONLY the boundary (level=0.5)
@@ -118,7 +118,7 @@ def loss_fit(loss1, loss2, X, y, model1, model2):
     ax2.scatter(X.T[0], y, ec="k", label="examples")
 
     x = np.linspace(X[:, 0].min() - 0.5, X[:, 0].max() + 0.5, 100)
-    pred = model1.predict(x.reshape(-1, 1))
+    pred = model1.output(x.reshape(-1, 1))
     ax2.plot(x, pred, "g-", label="neuron")
 
     x = np.linspace(X[:, 0].min() - 0.5, X[:, 0].max() + 0.5, 100)
