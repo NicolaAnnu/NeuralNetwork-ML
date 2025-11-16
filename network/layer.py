@@ -21,24 +21,38 @@ class Layer:
         for u in self.units:
             u.init_weights(n)
 
-    def forward(self, X: np.ndarray) -> np.ndarray:
+    def output(self, X: np.ndarray) -> np.ndarray:
         out = np.zeros((X.shape[0], len(self.units)))
         for i, u in enumerate(self.units):
-            out[:, i] = u.predict(X)
+            out[:, i] = u.output(X)
 
         return out
 
+    def update_weights(self, X: np.ndarray, error: np.ndarray):
+        for u, e in zip(self.units, error):
+            u.update_weights(X, e)
 
-def forward(X: np.ndarray, layers: list[Layer]) -> np.ndarray:
-    out = X
+
+def connect_layers(layers: list[Layer], input_size: int):
+    for l in layers:
+        l.init_weights(input_size)
+        input_size = len(l.units)
+
+
+def forward(layers: list[Layer], X: np.ndarray) -> np.ndarray:
     for layer in layers:
-        out = layer.forward(out)
+        out = layer.output(X)
+        X = out
 
     return out
 
 
+def backward(layers: list[Layer], error: np.ndarray, X: np.ndarray):
+    for i in range(len(layers)):
+        layers[-(i - 1)].update_weights(X, error)
+
+
 if __name__ == "__main__":
-    import matplotlib.pyplot as plt
     from sklearn.datasets import make_classification
 
     X, y = [
@@ -55,28 +69,26 @@ if __name__ == "__main__":
         )
     ]
 
-    layer = Layer(1)
-    output = Layer(1)
-    net = [layer, output]
+    layers = [Layer(1) for _ in range(1)]
+    connect_layers(layers, X.shape[1])
+    out = forward(layers, X[0:1, :])
 
-    n_inputs = X.shape[1]
-    for l in net:
-        l.init_weights(n_inputs)
-        n_inputs = len(l.units)
+    error = out[0] - y[0:1]
+    print(error)
 
-    out = forward(X, net)
+    backward(layers, error, X[0])
 
-    cls0 = X[y == 0].T
-    cls1 = X[y == 1].T
-
-    plt.figure(figsize=(5, 4), dpi=150)
-    plt.title("Example Dataset")
-
-    plt.scatter(cls0[0], cls0[1], c="r", ec="k", label="class 0")
-    plt.scatter(cls1[0], cls1[1], c="b", ec="k", label="class 1")
-
-    plt.xlabel("Feature 1")
-    plt.ylabel("Feature 2")
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
+    # cls0 = X[y == 0].T
+    # cls1 = X[y == 1].T
+    #
+    # plt.figure(figsize=(5, 4), dpi=150)
+    # plt.title("Example Dataset")
+    #
+    # plt.scatter(cls0[0], cls0[1], c="r", ec="k", label="class 0")
+    # plt.scatter(cls1[0], cls1[1], c="b", ec="k", label="class 1")
+    #
+    # plt.xlabel("Feature 1")
+    # plt.ylabel("Feature 2")
+    # plt.legend()
+    # plt.tight_layout()
+    # plt.show()

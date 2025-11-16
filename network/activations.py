@@ -1,15 +1,6 @@
 import numpy as np
 
 
-# linear (for regression)
-def linear(x):
-    return x
-
-
-def linear_d(_):
-    return 1
-
-
 # logistic
 def logistic(x):
     return 1 / (1 + np.exp(-x))
@@ -20,17 +11,18 @@ def logistic_d(x):
     return x1 * (1 - x1)
 
 
-# hyperbolic tangent
-def tanh(x):
-    return np.tanh(x)
-
-
 def tanh_d(x):
     return 1 - np.tanh(x) ** 2
 
 
+# dictionary of activation functions
+# every field returns a tuple with
+# 1. the activation function
+# 2. its derivative
+# 3. the hypothesis function associated with that activation (for predictions)
+
 activations = {
-    "linear": (linear, linear_d),
-    "logistic": (logistic, logistic_d),
-    "tanh": (tanh, tanh_d),
+    "linear": (lambda x: x, lambda _: 1, lambda x: x),
+    "logistic": (logistic, logistic_d, np.round),
+    "tanh": (np.tanh, tanh_d, np.sign),
 }
