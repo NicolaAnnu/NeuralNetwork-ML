@@ -20,11 +20,9 @@ class Neuron:
     def output(self, X: np.ndarray) -> np.ndarray:
         # save for backpropagation
         self.net = self.b + X @ self.W
-        self.out = self.activation[0](self.net)
+        return self.activation[0](self.net)
 
-        return self.out
-
-    def update_weights(self, X: np.ndarray, error: np.ndarray) -> None:
+    def update_weights(self, X: np.ndarray, error: np.ndarray) -> np.ndarray:
         delta = 2 * error * self.activation[1](self.net)
 
         # compute gradients
@@ -34,6 +32,8 @@ class Neuron:
         # update weights and bias through learning rule
         self.W -= self.learning_rate * weights_gradient
         self.b -= self.learning_rate * bias_gradient
+
+        return delta
 
 
 if __name__ == "__main__":

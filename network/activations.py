@@ -19,10 +19,9 @@ def tanh_d(x):
 # every field returns a tuple with
 # 1. the activation function
 # 2. its derivative
-# 3. the hypothesis function associated with that activation (for predictions)
 
 activations = {
-    "linear": (lambda x: x, lambda _: 1, lambda x: x),
-    "logistic": (logistic, logistic_d, np.round),
-    "tanh": (np.tanh, tanh_d, np.sign),
+    "linear": (lambda x: x, lambda _: 1),
+    "logistic": (logistic, logistic_d),
+    "tanh": (np.tanh, tanh_d),
 }
