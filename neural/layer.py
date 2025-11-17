@@ -1,7 +1,7 @@
 import numpy as np
 
-from network.activations import activations
-from network.neuron import Neuron
+from neural.activations import activations
+from neural.neuron import Neuron
 
 
 class Layer:

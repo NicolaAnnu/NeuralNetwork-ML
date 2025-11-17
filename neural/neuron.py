@@ -1,6 +1,6 @@
 import numpy as np
 
-from network.activations import activations
+from neural.activations import activations
 
 
 class Neuron:

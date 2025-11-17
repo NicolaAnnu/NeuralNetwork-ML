@@ -2,7 +2,7 @@ import numpy as np
 from sklearn.datasets import make_classification
 from sklearn.metrics import accuracy_score
 
-from network.layer import Layer
+from neural.layer import Layer
 
 
 def forward(layers: list[Layer], X: np.ndarray) -> np.ndarray:
@@ -12,8 +12,7 @@ def forward(layers: list[Layer], X: np.ndarray) -> np.ndarray:
     return layers[-1](X)
 
 
-def backward(layers: list[Layer], error: np.ndarray) -> None:
-    delta = 2 * error / batch_size
+def backward(layers: list[Layer], delta: np.ndarray) -> None:
     for l in reversed(layers):
         delta = l.update_weights(delta)
 
@@ -47,7 +46,8 @@ if __name__ == "__main__":
         for i in range(len(y)):
             out = forward(layers, X[i : i + batch_size, :])
             errors = out - y[i : i + batch_size]
-            backward(layers, errors)
+            delta = 2 * errors / batch_size
+            backward(layers, delta)
 
     out = np.round(forward(layers, X))
     accuracy = accuracy_score(y, out)

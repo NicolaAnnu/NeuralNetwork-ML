@@ -2,7 +2,7 @@ import numpy as np
 from sklearn.datasets import make_classification
 from sklearn.metrics import accuracy_score
 
-from network.neuron import Neuron
+from neural.neuron import Neuron
 
 if __name__ == "__main__":
     X, y = [

@@ -3,7 +3,7 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "neural_network" # nome del pacchetto
+name = "neural" # nome del pacchetto
 version = "0.0.1"
 description = "Neural Network"
 # authors = [
@@ -16,4 +16,4 @@ dependencies = ["numpy", "scipy"]
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["network"]
+include = ["neural"]
