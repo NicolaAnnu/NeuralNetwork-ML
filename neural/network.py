@@ -39,12 +39,21 @@ class Network:
             l.init_weights(n_inputs)
             n_inputs = len(l.units)
 
+        self.loss_curve = []
         for epoch in range(self.max_iter):
+            epoch_loss = 0.0
             for i in range(len(y)):
                 out = self.forward(X[i : i + self.batch_size, :])
                 errors = out - y[i : i + self.batch_size]
                 delta = 2 * errors / self.batch_size
                 self.backward(delta)
 
+                epoch_loss += np.sum(errors**2) / self.batch_size
+            self.loss_curve.append(epoch_loss)
+
     def predict(self, X: np.ndarray) -> np.ndarray:
         return self.forward(X)
+
+    @property
+    def loss(self):
+        return self.loss_curve[-1]
