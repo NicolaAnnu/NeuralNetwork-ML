@@ -17,16 +17,21 @@ class Neuron:
         self.W = np.random.random(n)
         self.b = np.random.random()
 
-    def output(self, X: np.ndarray) -> np.ndarray:
+    def __call__(self, X: np.ndarray) -> np.ndarray:
         # save for backpropagation
+        self.out_prev = X
         self.net = self.b + X @ self.W
+
         return self.activation[0](self.net)
 
-    def update_weights(self, X: np.ndarray, error: np.ndarray) -> np.ndarray:
-        delta = 2 * error * self.activation[1](self.net)
+    def forward(self, X: np.ndarray) -> np.ndarray:
+        return self.__call__(X).reshape(-1, 1)
+
+    def update_weights(self, error: np.ndarray) -> np.ndarray:
+        delta = error * self.activation[1](self.net)
 
         # compute gradients
-        weights_gradient = X.T @ delta
+        weights_gradient = self.out_prev.T @ delta
         bias_gradient = np.sum(delta)
 
         # update weights and bias through learning rule
@@ -34,36 +39,3 @@ class Neuron:
         self.b -= self.learning_rate * bias_gradient
 
         return delta
-
-
-if __name__ == "__main__":
-    from sklearn.datasets import make_classification
-    from sklearn.metrics import accuracy_score
-
-    X, y = [
-        np.array(i)
-        for i in make_classification(
-            n_samples=100,
-            n_features=2,
-            n_informative=2,
-            n_redundant=0,
-            n_repeated=0,
-            n_clusters_per_class=1,
-            class_sep=1.5,
-            random_state=0,
-        )
-    ]
-
-    neuron = Neuron(activation="logistic", learning_rate=0.1)
-    neuron.init_weights(X.shape[1])
-
-    batch_size = 5
-    for epoch in range(500):
-        for i in range(0, len(y), batch_size):
-            out = neuron.output(X[i : i + batch_size, :])
-            error = out - y[i : i + batch_size]
-            neuron.update_weights(X[i : i + batch_size, :], error)
-
-    out = np.round(neuron.output(X))
-    accuracy = accuracy_score(y, out)
-    print(f"accuracy: {accuracy:.2f}")
