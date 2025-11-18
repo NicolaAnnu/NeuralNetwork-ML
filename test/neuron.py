@@ -23,13 +23,12 @@ if __name__ == "__main__":
     neuron = Neuron(activation="logistic", learning_rate=0.1)
     neuron.init_weights(X.shape[1])
 
-    batch_size = 1
+    batch_size = 2
     for epoch in range(200):
         for i in range(0, len(y), batch_size):
             out = neuron(X[i : i + batch_size, :])
-            error = out - y[i : i + batch_size]
-            error = 2 * error / batch_size
-            delta = neuron.update_weights(error)
+            error = np.sum(out - y[i : i + batch_size])
+            delta = neuron.update_weights(2 * error)
 
     out = np.round(neuron(X))
     accuracy = accuracy_score(y, out)

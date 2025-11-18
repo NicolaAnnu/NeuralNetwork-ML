@@ -6,7 +6,7 @@ from sklearn.neural_network import MLPClassifier
 from neural.network import Network
 
 if __name__ == "__main__":
-    n_features = 20
+    n_features = 2
     X, y = [
         np.array(i)
         for i in make_classification(

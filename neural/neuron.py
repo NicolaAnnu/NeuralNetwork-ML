@@ -38,4 +38,4 @@ class Neuron:
         self.W -= self.learning_rate * weights_gradient
         self.b -= self.learning_rate * bias_gradient
 
-        return delta
+        return np.sum(delta, keepdims=True)

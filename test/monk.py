@@ -25,7 +25,7 @@ if __name__ == "__main__":
         hidden_layer_sizes=(5,),
         activation="tanh",
         learning_rate=0.1,
-        batch_size=100,
+        batch_size=2,
         max_iter=500,
     )
 

@@ -29,9 +29,9 @@ class Layer:
     def __call__(self, X: np.ndarray) -> np.ndarray:
         return self.forward(X)[:, 0]
 
-    def update_weights(self, errors: np.ndarray) -> np.ndarray:
-        deltas = np.zeros((len(self.units), errors.size))
+    def update_weights(self, delta: np.ndarray) -> np.ndarray:
+        deltas = np.zeros(len(self.units))
         for i, u in enumerate(self.units):
-            deltas[i] = u.update_weights(errors)
+            deltas[i] = u.update_weights(delta)
 
-        return deltas[0, :]
+        return deltas
