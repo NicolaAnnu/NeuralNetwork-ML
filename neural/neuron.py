@@ -17,14 +17,20 @@ class Neuron:
         self.W = np.random.normal(0, 0.1, n)
         self.b = np.random.normal(0, 1)
 
-    def __call__(self, X: np.ndarray) -> float:
+    def forward(self, X: np.ndarray) -> np.ndarray:
         # save for backpropagation
         self.out_prev = X
         self.net = self.b + X @ self.W
 
-        return self.activation[0](self.net)
+        out = np.zeros(1)
+        out[0] = self.activation[0](self.net)
 
-    def update(self, error: float) -> float:
+        return out
+
+    def __call__(self, X: np.ndarray) -> float:
+        return self.activation[0](self.b + X @ self.W)
+
+    def backward(self, error: np.ndarray) -> float:
         delta = error * self.activation[1](self.net)
 
         # compute gradients

@@ -8,16 +8,16 @@ from neural.neuron import Neuron
 
 def forward(neurons: list[Neuron], X: np.ndarray) -> float:
     for n in neurons:
-        X = np.asarray([n(X)])
+        X = n.forward(X)
 
     return X[0]
 
 
 def backward(neurons: list[Neuron], error: float) -> None:
     for n in reversed(neurons):
-        W = n.W.copy()  # save the old weights
-        delta = n.update(error)
-        error = np.sum(delta * W)
+        old_W = n.W.copy()  # save the old weights
+        delta = n.backward(np.array([error]))
+        error = np.sum(delta * old_W)
 
 
 if __name__ == "__main__":
@@ -36,13 +36,13 @@ if __name__ == "__main__":
         )
     ]
 
-    chain = [Neuron(activation="logistic", learning_rate=0.1) for _ in range(3)]
+    chain = [Neuron(activation="logistic", learning_rate=0.3) for _ in range(3)]
     chain[0].init_weights(X.shape[1])
     for u in chain[1:]:
         u.init_weights(1)
 
     loss_curve = []
-    for epoch in range(100):
+    for epoch in range(1000):
         epoch_loss = 0.0
         for i in range(len(y)):
             out = forward(chain, X[i])

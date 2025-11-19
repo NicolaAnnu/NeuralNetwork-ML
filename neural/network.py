@@ -9,7 +9,6 @@ class Network:
         hidden_layer_sizes=(5,),
         activation: str = "logistic",
         learning_rate: float = 0.1,
-        batch_size: int = 10,
         max_iter: int = 200,
     ) -> None:
         self.hidden_layer_sizes = hidden_layer_sizes
@@ -24,18 +23,17 @@ class Network:
 
         self.activation = activation
         self.learning_rate = learning_rate
-        self.batch_size = batch_size
         self.max_iter = max_iter
 
     def forward(self, X: np.ndarray) -> np.ndarray:
         for l in self.layers[:-1]:
             X = l.forward(X)
 
-        return self.layers[-1](X)
+        return self.layers[-1].forward(X)
 
     def backward(self, delta: np.ndarray) -> None:
         for l in reversed(self.layers):
-            delta = l.update_weights(delta)
+            delta = l.backward(delta)
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> None:
         # initialize first layer weights
@@ -44,19 +42,16 @@ class Network:
         self.loss_curve = []
         for _ in range(self.max_iter):
             epoch_loss = 0.0
-            for i in range(0, len(y), self.batch_size):
-                out = self.forward(X[i : i + self.batch_size, :])
-                error = out - y[i : i + self.batch_size]
-                self.backward(error)
+            for i in range(len(y)):
+                out = self.forward(X[i])
+                error = out - y[i]
+                self.backward(2 * error)
 
-                epoch_loss += np.sum(error**2) / self.batch_size
+                epoch_loss += np.sum(error) ** 2
             self.loss_curve.append(epoch_loss)
 
-    def predict(self, X: np.ndarray) -> np.ndarray:
-        return self.forward(X)
-
     @property
-    def loss(self):
+    def loss(self) -> float:
         return self.loss_curve[-1]
 
 
@@ -66,12 +61,9 @@ class Classifier(Network):
         hidden_layer_sizes=(5,),
         activation: str = "logistic",
         learning_rate: float = 0.1,
-        batch_size: int = 10,
         max_iter: int = 200,
     ) -> None:
-        super().__init__(
-            hidden_layer_sizes, activation, learning_rate, batch_size, max_iter
-        )
+        super().__init__(hidden_layer_sizes, activation, learning_rate, max_iter)
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> None:
         output = Layer(1, activation="logistic", learning_rate=self.learning_rate)
@@ -80,6 +72,9 @@ class Classifier(Network):
 
         super().fit(X, y)
 
+    def predict(self, X: np.ndarray) -> np.ndarray:
+        return np.round(self.forward(X))
+
 
 class Regressor(Network):
     def __init__(
@@ -87,12 +82,9 @@ class Regressor(Network):
         hidden_layer_sizes=(5,),
         activation: str = "logistic",
         learning_rate: float = 0.1,
-        batch_size: int = 10,
         max_iter: int = 200,
     ) -> None:
-        super().__init__(
-            hidden_layer_sizes, activation, learning_rate, batch_size, max_iter
-        )
+        super().__init__(hidden_layer_sizes, activation, learning_rate, max_iter)
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> None:
         output = Layer(1, activation="linear", learning_rate=self.learning_rate)
@@ -100,3 +92,6 @@ class Regressor(Network):
         self.layers.append(output)
 
         super().fit(X, y)
+
+    def predict(self, X: np.ndarray) -> np.ndarray:
+        return self.forward(X)

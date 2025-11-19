@@ -20,18 +20,17 @@ class Layer:
             u.init_weights(n)
 
     def forward(self, X: np.ndarray) -> np.ndarray:
-        out = np.zeros((X.shape[0], len(self.units)))
+        out = np.zeros(len(self.units))
         for i, u in enumerate(self.units):
-            out[:, i] = u(X)
+            out[i] = u.forward(X)
 
         return out
 
-    def __call__(self, X: np.ndarray) -> np.ndarray:
-        return self.forward(X)[:, 0]
-
-    def update_weights(self, delta: np.ndarray) -> np.ndarray:
+    def backward(self, delta: np.ndarray) -> np.ndarray:
         deltas = np.zeros(len(self.units))
         for i, u in enumerate(self.units):
-            deltas[i] = u.update(delta)
+            old_W = u.W.copy()
+            deltas[i] = u.backward(delta)
+            deltas[i] = np.sum(deltas[i] * old_W)
 
         return deltas

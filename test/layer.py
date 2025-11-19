@@ -14,7 +14,7 @@ def forward(layers: list[Layer], X: np.ndarray) -> np.ndarray:
 
 def backward(layers: list[Layer], delta: np.ndarray) -> None:
     for l in reversed(layers):
-        delta = l.update_weights(delta)
+        delta = l.backward(delta)
 
 
 if __name__ == "__main__":

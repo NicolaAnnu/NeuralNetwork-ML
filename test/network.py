@@ -3,14 +3,14 @@ from sklearn.datasets import make_classification
 from sklearn.metrics import accuracy_score
 from sklearn.neural_network import MLPClassifier
 
-from neural.network import Network
+from neural.network import Classifier
 
 if __name__ == "__main__":
     n_features = 2
     X, y = [
         np.array(i)
         for i in make_classification(
-            n_samples=500,
+            n_samples=100,
             n_features=n_features,
             n_informative=n_features,
             n_redundant=0,
@@ -22,29 +22,30 @@ if __name__ == "__main__":
         )
     ]
 
-    net = Network(
-        hidden_layer_sizes=(10, 1),
-        activation="logistic",
-        learning_rate=0.1,
-        batch_size=200,
-        max_iter=200,
+    topology = (10,)
+    activation = "logistic"
+    learning_rate = 0.1
+    max_iter = 200
+
+    net = Classifier(
+        hidden_layer_sizes=topology,
+        activation=activation,
+        learning_rate=learning_rate,
+        max_iter=max_iter,
     )
 
     mlp = MLPClassifier(
-        hidden_layer_sizes=(10,),
-        activation="logistic",
+        hidden_layer_sizes=topology,
+        activation=activation,
         solver="sgd",
-        learning_rate_init=0.1,
-        max_iter=200,
-        alpha=0,
-        momentum=0,
-        nesterovs_momentum=False,
+        learning_rate_init=learning_rate,
+        max_iter=max_iter,
     )
 
     net.fit(X, y)
     mlp.fit(X, y)
 
-    net_pred = np.round(net.predict(X))
+    net_pred = np.asarray([np.round(net.predict(x)) for x in X])
     mlp_pred = mlp.predict(X)
 
     accuracy = accuracy_score(y, net_pred)

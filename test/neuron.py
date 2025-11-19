@@ -27,11 +27,11 @@ if __name__ == "__main__":
     for epoch in range(50):
         epoch_loss = 0.0
         for i in range(len(y)):
-            out = neuron(X[i])
-            delta = neuron.update(2 * (out - y[i]))
+            out = neuron.forward(X[i])
+            delta = neuron.backward(2 * (out - y[i]))
             epoch_loss += (out - y[i]) ** 2
         loss_curve.append(epoch_loss / y.size)
 
-    out = np.array([np.round(neuron(x)) for x in X])
+    out = np.array([np.round(neuron.forward(x)) for x in X])
     accuracy = accuracy_score(y, out)
     print(f"accuracy: {accuracy:.2f}")

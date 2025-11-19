@@ -21,42 +21,46 @@ if __name__ == "__main__":
     X_test = test[["a1", "a2", "a3", "a4", "a5", "a6"]].to_numpy()
     y_test = test["class"].to_numpy()
 
+    topology = (3,)
+    activation = "tanh"
+    learning_rate = 0.05
+    max_iter = 500
+
     net = Classifier(
-        hidden_layer_sizes=(5,),
-        activation="tanh",
-        learning_rate=0.1,
-        batch_size=2,
-        max_iter=500,
+        hidden_layer_sizes=topology,
+        activation=activation,
+        learning_rate=learning_rate,
+        max_iter=max_iter,
     )
 
     mlp = MLPClassifier(
-        hidden_layer_sizes=(5,),
-        activation="tanh",
+        hidden_layer_sizes=topology,
+        activation=activation,
         solver="sgd",
-        learning_rate_init=0.1,
-        max_iter=500,
+        learning_rate_init=learning_rate,
+        max_iter=max_iter,
     )
 
     net.fit(X_train, y_train)
     mlp.fit(X_train, y_train)
+    print(f"network loss: {net.loss:.2f}")
+    print(f"sklearn loss: {mlp.loss_:.2f}")
 
     plt.plot(net.loss_curve)
     plt.plot(mlp.loss_curve_)
     plt.show()
 
-    net_pred = np.round(net.predict(X_train))
+    net_pred = np.asarray([net.predict(x) for x in X_train])
     accuracy = accuracy_score(y_train, net_pred)
     print(f"network train accuracy: {accuracy:.2f}")
-    print(f"network loss: {net.loss:.2f}")
-
-    net_pred = np.round(net.predict(X_test))
-    accuracy = accuracy_score(y_test, net_pred)
-    print(f"network test accuracy: {accuracy:.2f}")
 
     mlp_pred = mlp.predict(X_train)
     accuracy = accuracy_score(y_train, mlp_pred)
     print(f"sklearn train accuracy: {accuracy:.2f}")
-    print(f"sklearn loss: {mlp.loss_:.2f}")
+
+    net_pred = np.asarray([net.predict(x) for x in X_test])
+    accuracy = accuracy_score(y_test, net_pred)
+    print(f"network test accuracy: {accuracy:.2f}")
 
     mlp_pred = mlp.predict(X_test)
     accuracy = accuracy_score(y_test, mlp_pred)
