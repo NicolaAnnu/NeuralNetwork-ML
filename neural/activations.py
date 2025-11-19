@@ -15,6 +15,14 @@ def tanh_d(x):
     return 1 - np.tanh(x) ** 2
 
 
+def relu(x):
+    return np.maximum(0, x)
+
+
+def relu_d(x):
+    return (x > 0).astype(float)
+
+
 # dictionary of activation functions
 # every field returns a tuple with
 # 1. the activation function
@@ -24,4 +32,5 @@ activations = {
     "linear": (lambda x: x, lambda _: 1),
     "logistic": (logistic, logistic_d),
     "tanh": (np.tanh, tanh_d),
+    "relu": (relu, relu_d),
 }

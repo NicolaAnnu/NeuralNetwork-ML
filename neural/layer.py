@@ -26,14 +26,11 @@ class Layer:
 
         return out
 
-    def backward(self, delta_next: np.ndarray) -> np.ndarray:
-        deltas = np.zeros(len(self.units))
-
-        for i, u in enumerate(self.units):
-            deltas[i] = u.backward(delta_next[i])
-
+    def backward(self, delta: np.ndarray) -> np.ndarray:
         W = np.array([u.W for u in self.units])
 
-        delta_prev = W.T @ deltas
+        deltas = np.zeros(len(self.units))
+        for i, u in enumerate(self.units):
+            deltas[i] = u.backward(delta)
 
-        return delta_prev
+        return W.T @ deltas
