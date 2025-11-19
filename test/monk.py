@@ -21,9 +21,10 @@ if __name__ == "__main__":
     X_test = test[["a1", "a2", "a3", "a4", "a5", "a6"]].to_numpy()
     y_test = test["class"].to_numpy()
 
-    topology = (10,)
+    n = 5
+    topology = (n,)
     activation = "logistic"
-    learning_rate = 0.1
+    learning_rate = 0.08
     max_iter = 500
 
     net = Classifier(

@@ -11,6 +11,7 @@ class Layer:
         activation: str = "logistic",
         learning_rate: float = 0.01,
     ) -> None:
+        self.n_units = n_units
         self.units = [Neuron(activation, learning_rate) for _ in range(n_units)]
         self.activation = activations[activation]
         self.learning_rate = learning_rate
@@ -20,17 +21,23 @@ class Layer:
             u.init_weights(n)
 
     def forward(self, X: np.ndarray) -> np.ndarray:
-        out = np.zeros(len(self.units))
+        out = np.zeros(self.n_units)
         for i, u in enumerate(self.units):
             out[i] = u.forward(X)
 
         return out
 
-    def backward(self, delta: np.ndarray) -> np.ndarray:
-        W = np.array([u.W for u in self.units])
-
-        deltas = np.zeros(len(self.units))
+    def backward(self, error: np.ndarray) -> np.ndarray:
+        deltas = np.zeros(self.n_units)
         for i, u in enumerate(self.units):
-            deltas[i] = u.backward(delta)
+            deltas[i] = u.backward(error)
 
-        return W.T @ deltas
+        return deltas
+
+    def weights(self) -> np.ndarray:
+        weights_per_unit = len(self.units[0].W)
+        W = np.zeros((self.n_units, weights_per_unit))
+        for i, u in enumerate(self.units):
+            W[i] = u.W
+
+        return W

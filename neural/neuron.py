@@ -14,8 +14,8 @@ class Neuron:
 
     def init_weights(self, n: int) -> None:
         # randomly initialize weights and bias
-        self.W = np.random.normal(0, 0.1, n)
-        self.b = np.random.normal(0, 1)
+        self.W = np.random.normal(0, 1, n)
+        self.b = 0.0
 
     def forward(self, X: np.ndarray) -> np.ndarray:
         # save for backpropagation

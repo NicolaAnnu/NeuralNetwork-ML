@@ -31,16 +31,17 @@ class Network:
 
         return X
 
-    def backward(self, delta: np.ndarray) -> None:
+    def backward(self, error: np.ndarray) -> None:
         for l in reversed(self.layers):
-            delta = l.backward(delta)
+            w = l.weights()
+            error = l.backward(error)
+            error = error @ w
 
     def fit(self, X, y):
         # initialize first layer weights
         self.layers[0].init_weights(X.shape[1])
 
         self.loss_curve = []
-
         for _ in range(self.max_iter):
             epoch_loss = 0.0
             for i in range(len(y)):
