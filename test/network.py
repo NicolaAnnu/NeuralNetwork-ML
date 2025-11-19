@@ -22,7 +22,7 @@ if __name__ == "__main__":
         )
     ]
 
-    topology = (10,)
+    topology = (5, 5)
     activation = "logistic"
     learning_rate = 0.1
     max_iter = 200

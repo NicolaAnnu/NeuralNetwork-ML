@@ -32,5 +32,6 @@ class Layer:
             old_W = u.W.copy()
             deltas[i] = u.backward(delta)
             deltas[i] = np.sum(deltas[i] * old_W)
+            delta = np.array([deltas[i]])
 
         return deltas

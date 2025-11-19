@@ -31,7 +31,7 @@ class Neuron:
         return self.activation[0](self.b + X @ self.W)
 
     def backward(self, error: np.ndarray) -> float:
-        delta = error * self.activation[1](self.net)
+        delta = np.outer(error, self.activation[1](self.net))[0]
 
         # compute gradients
         weights_gradient = self.out_prev.T * delta

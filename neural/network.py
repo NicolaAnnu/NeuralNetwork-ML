@@ -26,10 +26,10 @@ class Network:
         self.max_iter = max_iter
 
     def forward(self, X: np.ndarray) -> np.ndarray:
-        for l in self.layers[:-1]:
+        for l in self.layers:
             X = l.forward(X)
 
-        return self.layers[-1].forward(X)
+        return X
 
     def backward(self, delta: np.ndarray) -> None:
         for l in reversed(self.layers):

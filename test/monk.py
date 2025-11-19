@@ -21,9 +21,9 @@ if __name__ == "__main__":
     X_test = test[["a1", "a2", "a3", "a4", "a5", "a6"]].to_numpy()
     y_test = test["class"].to_numpy()
 
-    topology = (3,)
+    topology = (5,)
     activation = "tanh"
-    learning_rate = 0.05
+    learning_rate = 0.1
     max_iter = 500
 
     net = Classifier(
