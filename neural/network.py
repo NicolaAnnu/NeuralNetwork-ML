@@ -35,24 +35,25 @@ class Network:
         for l in reversed(self.layers):
             delta = l.backward(delta)
 
-    def fit(self, X: np.ndarray, y: np.ndarray) -> None:
+    def fit(self, X, y):
         # initialize first layer weights
         self.layers[0].init_weights(X.shape[1])
 
         self.loss_curve = []
+
         for _ in range(self.max_iter):
             epoch_loss = 0.0
             for i in range(len(y)):
                 out = self.forward(X[i])
                 error = out - y[i]
                 self.backward(2 * error)
+                epoch_loss += error**2
 
-                epoch_loss += np.sum(error) ** 2
-            self.loss_curve.append(epoch_loss)
+            self.loss_curve.append(epoch_loss / len(y))
 
     @property
     def loss(self) -> float:
-        return self.loss_curve[-1]
+        return self.loss_curve[-1][0]
 
 
 class Classifier(Network):

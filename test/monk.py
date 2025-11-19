@@ -22,9 +22,9 @@ if __name__ == "__main__":
     y_test = test["class"].to_numpy()
 
     topology = (5,)
-    activation = "tanh"
-    learning_rate = 0.1
-    max_iter = 500
+    activation = "logistic"
+    learning_rate = 0.03
+    max_iter = 1000
 
     net = Classifier(
         hidden_layer_sizes=topology,
