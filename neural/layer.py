@@ -32,6 +32,6 @@ class Layer:
     def update_weights(self, delta: np.ndarray) -> np.ndarray:
         deltas = np.zeros(len(self.units))
         for i, u in enumerate(self.units):
-            deltas[i] = u.update_weights(delta)
+            deltas[i] = u.update(delta)
 
         return deltas

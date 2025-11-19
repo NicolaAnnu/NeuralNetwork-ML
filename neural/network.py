@@ -44,7 +44,7 @@ class Network:
         self.loss_curve = []
         for _ in range(self.max_iter):
             epoch_loss = 0.0
-            for i in range(len(y)):
+            for i in range(0, len(y), self.batch_size):
                 out = self.forward(X[i : i + self.batch_size, :])
                 error = out - y[i : i + self.batch_size]
                 self.backward(error)

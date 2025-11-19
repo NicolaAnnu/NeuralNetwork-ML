@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.datasets import make_classification
 from sklearn.metrics import accuracy_score
@@ -5,54 +6,53 @@ from sklearn.metrics import accuracy_score
 from neural.neuron import Neuron
 
 
-def forward(neurons: list[Neuron], X: np.ndarray) -> np.ndarray:
-    for n in neurons[:-1]:
-        X = n.forward(X)
+def forward(neurons: list[Neuron], X: np.ndarray) -> float:
+    for n in neurons:
+        X = np.asarray([n(X)])
 
-    return neurons[-1](X)
+    return X[0]
 
 
-def backward(neurons: list[Neuron], error: np.ndarray) -> None:
-    delta = 2 * error / error.size
-    for i, n in enumerate(reversed(neurons)):
-        delta = n.update_weights(delta)
-
-        if i > 0:
-            delta = delta[:, None] * n.W[None, :]
-            delta = delta[:, 0]
+def backward(neurons: list[Neuron], error: float) -> None:
+    for n in reversed(neurons):
+        W = n.W.copy()  # save the old weights
+        delta = n.update(error)
+        error = np.sum(delta * W)
 
 
 if __name__ == "__main__":
-    n_features = 2
     X, y = [
         np.array(i)
         for i in make_classification(
-            n_samples=100,
-            n_features=n_features,
-            n_informative=n_features,
+            n_samples=200,
+            n_features=2,
+            n_informative=2,
             n_redundant=0,
             n_repeated=0,
+            n_classes=2,
             n_clusters_per_class=1,
-            class_sep=1.5,
+            class_sep=2,
             random_state=0,
         )
     ]
 
-    lr = 0.3
-    chain = [Neuron(activation="logistic", learning_rate=lr) for _ in range(4)]
+    chain = [Neuron(activation="logistic", learning_rate=0.1) for _ in range(3)]
+    chain[0].init_weights(X.shape[1])
+    for u in chain[1:]:
+        u.init_weights(1)
 
-    input_size = X.shape[1]
-    for n in chain:
-        n.init_weights(input_size)
-        input_size = 1
-
-    batch_size = 5
-    for epoch in range(200):
+    loss_curve = []
+    for epoch in range(100):
+        epoch_loss = 0.0
         for i in range(len(y)):
-            out = forward(chain, X[i : i + batch_size, :])
-            error = out - y[i : i + batch_size]
-            backward(chain, error)
+            out = forward(chain, X[i])
+            backward(chain, 2 * (out - y[i]))
+            epoch_loss += (out - y[i]) ** 2
+        loss_curve.append(epoch_loss / y.size)
 
-    out = np.round(forward(chain, X))
+    out = np.array([np.round(forward(chain, x)) for x in X])
     accuracy = accuracy_score(y, out)
     print(f"accuracy: {accuracy:.2f}")
+
+    plt.plot(loss_curve)
+    plt.show()
