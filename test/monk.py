@@ -25,9 +25,9 @@ if __name__ == "__main__":
     X_train = encoder.fit_transform(X_train)
     X_test = encoder.fit_transform(X_test)
 
-    topology = (5,)
-    activation = "tanh"
-    learning_rate = 0.01
+    topology = (3,)
+    activation = "logistic"
+    learning_rate = 0.1
     max_iter = 500
     batch_size = 10
 

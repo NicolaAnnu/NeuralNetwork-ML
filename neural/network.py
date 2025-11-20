@@ -14,13 +14,13 @@ class Network:
     ) -> None:
         self.hidden_layer_sizes = hidden_layer_sizes
         self.layers = [
-            Layer(n_units=n_units, activation=activation, learning_rate=learning_rate)
-            for n_units in hidden_layer_sizes
+            Layer(units=units, activation=activation, learning_rate=learning_rate)
+            for units in hidden_layer_sizes
         ]
 
         # initialize hidden layers weights
         for i in range(1, len(self.layers), 1):
-            self.layers[i].init_weights(len(self.layers[i - 1].units))
+            self.layers[i].init_weights(self.layers[i - 1].units)
 
         self.activation = activation
         self.learning_rate = learning_rate
@@ -33,11 +33,9 @@ class Network:
 
         return X
 
-    def backward(self, error: np.ndarray) -> None:
+    def backward(self, dloss: np.ndarray) -> None:
         for l in reversed(self.layers):
-            w = l.weights()
-            delta = l.backward(error)
-            error = delta @ w.T
+            dloss = l.backward(dloss)
 
     def fit(self, X, y):
         # initialize first layer weights
@@ -74,7 +72,7 @@ class Classifier(Network):
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> None:
         output = Layer(1, activation="logistic", learning_rate=self.learning_rate)
-        output.init_weights(len(self.layers[-1].units))
+        output.init_weights(self.layers[-1].units)
         self.layers.append(output)
 
         super().fit(X, y)
@@ -98,7 +96,7 @@ class Regressor(Network):
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> None:
         output = Layer(1, activation="linear", learning_rate=self.learning_rate)
-        output.init_weights(len(self.layers[-1].units))
+        output.init_weights(self.layers[-1].units)
         self.layers.append(output)
 
         super().fit(X, y)
