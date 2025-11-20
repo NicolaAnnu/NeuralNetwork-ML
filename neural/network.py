@@ -63,8 +63,10 @@ class Network:
                 for l in self.layers:
                     penalty += l.lam * la.norm(l.W, ord=2) ** 2
 
-                dloss = 2 * error + penalty
+                dloss = 2 * (error + penalty)
                 self.backward(dloss)
+
+                epoch_loss += np.mean(error**2) + penalty
 
             self.loss_curve.append(epoch_loss / (len(y) / self.batch_size))
 

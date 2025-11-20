@@ -1,38 +1,28 @@
-import argparse
-
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
+from sklearn.datasets import load_breast_cancer
 from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPClassifier
-from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import StandardScaler
 
 from neural.network import Classifier
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("id", type=int, help="monk dataset ID")
-    args = parser.parse_args()
+    X, y = [np.array(i) for i in load_breast_cancer(return_X_y=True)]
+    normalizer = StandardScaler()
+    X = normalizer.fit_transform(X)
+    X_train, X_test, y_train, y_test = [
+        np.array(i) for i in train_test_split(X, y, test_size=0.2)
+    ]
 
-    train = pd.read_csv(f"datasets/monks_train{args.id}.csv")
-    X_train = train[["a1", "a2", "a3", "a4", "a5", "a6"]].to_numpy()
-    y_train = train["class"].to_numpy()
-
-    test = pd.read_csv(f"datasets/monks_test{args.id}.csv")
-    X_test = test[["a1", "a2", "a3", "a4", "a5", "a6"]].to_numpy()
-    y_test = test["class"].to_numpy()
-
-    encoder = OneHotEncoder(sparse_output=False)
-    X_train = encoder.fit_transform(X_train)
-    X_test = np.asarray(encoder.transform(X_test))
-
-    topology = (5,)
+    topology = (32,)
     activation = "tanh"
-    learning_rate = 0.01
-    lam = 0.0001
+    learning_rate = 0.001
+    lam = 0.001
     alpha = 0.9
-    batch_size = 10
-    max_iter = 500
+    batch_size = 50
+    max_iter = 1000
 
     net = Classifier(
         hidden_layer_sizes=topology,
