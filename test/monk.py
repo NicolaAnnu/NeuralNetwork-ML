@@ -1,7 +1,6 @@
 import argparse
 
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 from sklearn.metrics import accuracy_score
 from sklearn.neural_network import MLPClassifier
@@ -21,16 +20,17 @@ if __name__ == "__main__":
     X_test = test[["a1", "a2", "a3", "a4", "a5", "a6"]].to_numpy()
     y_test = test["class"].to_numpy()
 
-    n = 5
-    topology = (n,)
+    topology = (5,)
     activation = "logistic"
-    learning_rate = 0.08
+    learning_rate = 0.05
     max_iter = 500
+    batch_size = 10
 
     net = Classifier(
         hidden_layer_sizes=topology,
         activation=activation,
         learning_rate=learning_rate,
+        batch_size=batch_size,
         max_iter=max_iter,
     )
 
@@ -39,6 +39,7 @@ if __name__ == "__main__":
         activation=activation,
         solver="sgd",
         learning_rate_init=learning_rate,
+        batch_size=batch_size,
         max_iter=max_iter,
     )
 
@@ -47,11 +48,12 @@ if __name__ == "__main__":
     print(f"network loss: {net.loss:.2f}")
     print(f"sklearn loss: {mlp.loss_:.2f}")
 
-    plt.plot(net.loss_curve)
-    plt.plot(mlp.loss_curve_)
+    plt.plot(net.loss_curve, label="network")
+    plt.plot(mlp.loss_curve_, label="sklearn")
+    plt.legend()
     plt.show()
 
-    net_pred = np.asarray([net.predict(x) for x in X_train])
+    net_pred = net.predict(X_train)
     accuracy = accuracy_score(y_train, net_pred)
     print(f"network train accuracy: {accuracy:.2f}")
 
@@ -59,7 +61,7 @@ if __name__ == "__main__":
     accuracy = accuracy_score(y_train, mlp_pred)
     print(f"sklearn train accuracy: {accuracy:.2f}")
 
-    net_pred = np.asarray([net.predict(x) for x in X_test])
+    net_pred = net.predict(X_test)
     accuracy = accuracy_score(y_test, net_pred)
     print(f"network test accuracy: {accuracy:.2f}")
 

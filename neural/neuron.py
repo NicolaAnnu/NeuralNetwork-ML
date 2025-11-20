@@ -22,20 +22,23 @@ class Neuron:
         self.out_prev = X
         self.net = self.b + X @ self.W
 
-        out = np.zeros(1)
-        out[0] = self.activation[0](self.net)
+        out = np.zeros((X.shape[0], 1))
+        out[:, 0] = self.activation[0](self.net)
 
         return out
 
-    def __call__(self, X: np.ndarray) -> float:
-        return self.activation[0](self.b + X @ self.W)
+    def __call__(self, X: np.ndarray) -> np.ndarray:
+        self.out_prev = X
+        self.net = self.b + X @ self.W
 
-    def backward(self, error: np.ndarray) -> float:
-        delta = np.outer(error, self.activation[1](self.net))[0]
+        return self.activation[0](self.net)
+
+    def backward(self, error: np.ndarray) -> np.ndarray:
+        delta = error * self.activation[1](self.net)
 
         # compute gradients
-        weights_gradient = self.out_prev * delta
-        bias_gradient = delta
+        weights_gradient = self.out_prev.T @ delta
+        bias_gradient = np.sum(delta)
 
         # update weights and bias through learning rule
         self.W -= self.learning_rate * weights_gradient

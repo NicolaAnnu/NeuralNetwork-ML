@@ -6,18 +6,18 @@ from sklearn.metrics import accuracy_score
 from neural.neuron import Neuron
 
 
-def forward(neurons: list[Neuron], X: np.ndarray) -> float:
+def forward(neurons: list[Neuron], X: np.ndarray) -> np.ndarray:
     for n in neurons:
         X = n.forward(X)
 
-    return X[0]
+    return X[:, 0]
 
 
-def backward(neurons: list[Neuron], error: float) -> None:
+def backward(neurons: list[Neuron], error: np.ndarray) -> None:
     for n in reversed(neurons):
         old_W = n.W.copy()  # save the old weights
-        delta = n.backward(np.array([error]))
-        error = np.sum(delta * old_W)
+        delta = n.backward(error)
+        error = np.outer(delta, old_W)[:, 0]
 
 
 if __name__ == "__main__":
@@ -36,21 +36,29 @@ if __name__ == "__main__":
         )
     ]
 
-    chain = [Neuron(activation="logistic", learning_rate=0.3) for _ in range(3)]
+    lr = 0.3
+    chain = [Neuron(activation="relu", learning_rate=lr) for _ in range(3)]
+    chain.append(Neuron(activation="logistic", learning_rate=lr))
     chain[0].init_weights(X.shape[1])
     for u in chain[1:]:
         u.init_weights(1)
 
-    loss_curve = []
-    for epoch in range(1000):
-        epoch_loss = 0.0
-        for i in range(len(y)):
-            out = forward(chain, X[i])
-            backward(chain, 2 * (out - y[i]))
-            epoch_loss += (out - y[i]) ** 2
-        loss_curve.append(epoch_loss / y.size)
+    out = np.round(forward(chain, X))
+    accuracy = accuracy_score(y, out)
+    print(f"accuracy: {accuracy:.2f}")
 
-    out = np.array([np.round(forward(chain, x)) for x in X])
+    loss_curve = []
+    batch_size = 100
+    for epoch in range(500):
+        epoch_loss = 0.0
+        for i in range(0, len(y), batch_size):
+            out = forward(chain, X[i : i + batch_size, :])
+            error = out - y[i : i + batch_size]
+            backward(chain, 2 * error)
+            epoch_loss += np.sum(error**2) / batch_size
+        loss_curve.append(epoch_loss / (len(y) / batch_size))
+
+    out = np.round(forward(chain, X))
     accuracy = accuracy_score(y, out)
     print(f"accuracy: {accuracy:.2f}")
 

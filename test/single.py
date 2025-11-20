@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.datasets import make_classification
 from sklearn.metrics import accuracy_score
@@ -24,14 +25,19 @@ if __name__ == "__main__":
     neuron.init_weights(X.shape[1])
 
     loss_curve = []
-    for epoch in range(50):
+    batch_size = 100
+    for epoch in range(200):
         epoch_loss = 0.0
-        for i in range(len(y)):
-            out = neuron.forward(X[i])
-            delta = neuron.backward(2 * (out - y[i]))
-            epoch_loss += (out - y[i]) ** 2
-        loss_curve.append(epoch_loss / y.size)
+        for i in range(0, len(y), batch_size):
+            out = neuron(X[i : i + batch_size, :])
+            error = out - y[i : i + batch_size]
+            neuron.backward(2 * error)
+            epoch_loss += np.sum(error**2) / batch_size
+        loss_curve.append(epoch_loss / (len(y) / batch_size))
 
-    out = np.array([np.round(neuron.forward(x)) for x in X])
+    plt.plot(loss_curve)
+    plt.show()
+
+    out = np.round(neuron(X))
     accuracy = accuracy_score(y, out)
     print(f"accuracy: {accuracy:.2f}")
