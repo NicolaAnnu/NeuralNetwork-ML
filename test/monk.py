@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn.metrics import accuracy_score
 from sklearn.neural_network import MLPClassifier
+from sklearn.preprocessing import OneHotEncoder
 
 from neural.network import Classifier
 
@@ -20,9 +21,13 @@ if __name__ == "__main__":
     X_test = test[["a1", "a2", "a3", "a4", "a5", "a6"]].to_numpy()
     y_test = test["class"].to_numpy()
 
+    encoder = OneHotEncoder(sparse_output=False)
+    X_train = encoder.fit_transform(X_train)
+    X_test = encoder.fit_transform(X_test)
+
     topology = (5,)
-    activation = "logistic"
-    learning_rate = 0.05
+    activation = "tanh"
+    learning_rate = 0.01
     max_iter = 500
     batch_size = 10
 
@@ -39,7 +44,6 @@ if __name__ == "__main__":
         activation=activation,
         solver="sgd",
         learning_rate_init=learning_rate,
-        batch_size=batch_size,
         max_iter=max_iter,
     )
 
