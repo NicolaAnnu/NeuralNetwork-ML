@@ -26,16 +26,18 @@ if __name__ == "__main__":
     X_train = encoder.fit_transform(X_train)
     X_test = np.asarray(encoder.transform(X_test))
 
-    topology = (4,)
-    activation = "logistic"
-    learning_rate = 0.08
-    max_iter = 500
+    topology = (20, 20)
+    activation = "relu"
+    learning_rate = 0.01
+    lam = 0.0008
     batch_size = 10
+    max_iter = 500
 
     net = Classifier(
         hidden_layer_sizes=topology,
         activation=activation,
         learning_rate=learning_rate,
+        lam=lam,
         batch_size=batch_size,
         max_iter=max_iter,
     )
@@ -44,6 +46,7 @@ if __name__ == "__main__":
         hidden_layer_sizes=topology,
         activation=activation,
         solver="sgd",
+        alpha=lam,
         learning_rate_init=learning_rate,
         max_iter=max_iter,
     )

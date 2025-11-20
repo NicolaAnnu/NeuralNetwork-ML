@@ -9,10 +9,12 @@ class Layer:
         units: int,
         activation: str = "logistic",
         learning_rate: float = 0.01,
+        lam: float = 0.0001,
     ) -> None:
         self.units = units
         self.activation = activations[activation]
         self.learning_rate = learning_rate
+        self.lam = lam
 
     def init_weights(self, n: int) -> None:
         self.W = np.random.normal(0, 1, (n, self.units))
@@ -32,7 +34,8 @@ class Layer:
         bias_gradient = np.sum(delta, axis=0)
 
         # update weights and bias through learning rule
-        self.W -= self.learning_rate * weights_gradient
+        penalty = 2 * self.lam * self.W  # regularization
+        self.W -= self.learning_rate * weights_gradient + penalty
         self.b -= self.learning_rate * bias_gradient
 
         return delta @ self.W.T
