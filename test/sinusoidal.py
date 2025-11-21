@@ -8,8 +8,8 @@ from sklearn.preprocessing import StandardScaler
 from neural.network import Regressor
 
 if __name__ == "__main__":
-    X = np.linspace(-10, 10, 500)
-    y = 0.5 * X**3 - 1 * X**2 + X + 5 + np.random.normal(0, 50, 500)
+    X = np.linspace(-6, 6, 500)
+    y = np.sin(X + 0.3 * np.random.randn(500))
     X = X.reshape(-1, 1)
 
     scaler = StandardScaler()
@@ -20,13 +20,13 @@ if __name__ == "__main__":
         np.array(i) for i in train_test_split(X, y, test_size=0.2)
     ]
 
-    topology = (10, 10, 10)
-    activation = "logistic"
-    learning_rate = 0.01
+    topology = (20,)
+    activation = "tanh"
+    learning_rate = 0.001
     lam = 0.0001
-    alpha = 0.9
+    alpha = 0.7
     batch_size = 10
-    max_iter = 500
+    max_iter = 1000
 
     net = Regressor(
         hidden_layer_sizes=topology,
