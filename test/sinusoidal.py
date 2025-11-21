@@ -9,7 +9,7 @@ from neural.network import Regressor
 
 if __name__ == "__main__":
     X = np.linspace(-6, 6, 500)
-    y = np.sin(X + 0.3 * np.random.randn(500))
+    y = np.sin(X + 0.1 * np.random.randn(500))
     X = X.reshape(-1, 1)
 
     scaler = StandardScaler()
@@ -34,6 +34,7 @@ if __name__ == "__main__":
         learning_rate=learning_rate,
         lam=lam,
         alpha=alpha,
+        tol=1e-4,
         batch_size=batch_size,
         max_iter=max_iter,
     )
@@ -45,14 +46,14 @@ if __name__ == "__main__":
         alpha=lam,
         learning_rate_init=learning_rate,
         momentum=alpha,
-        nesterovs_momentum=False,
+        nesterovs_momentum=True,
         max_iter=max_iter,
     )
 
     net.fit(X_train, y_train)
     mlp.fit(X_train, y_train)
-    print(f"network loss: {net.loss:.2f}")
-    print(f"sklearn loss: {mlp.loss_:.2f}")
+    print(f"network loss: {net.loss:.4f}")
+    print(f"sklearn loss: {mlp.loss_:.4f}")
 
     plt.plot(net.loss_curve, label="network")
     plt.plot(mlp.loss_curve_, label="sklearn")
@@ -60,12 +61,12 @@ if __name__ == "__main__":
     plt.show()
 
     net_pred = net.predict(X_train)
-    accuracy = mean_squared_error(y_train, net_pred)
-    print(f"network train accuracy: {accuracy:.2f}")
+    mse = mean_squared_error(y_train, net_pred)
+    print(f"network train MSE: {mse:.4f}")
 
     mlp_pred = mlp.predict(X_train)
-    accuracy = mean_squared_error(y_train, mlp_pred)
-    print(f"sklearn train accuracy: {accuracy:.2f}")
+    mse = mean_squared_error(y_train, mlp_pred)
+    print(f"sklearn train MSE: {mse:.4f}")
 
     x = np.linspace(X.T[0].min() - 0.1, X.T[0].max() + 0.1, 100)
     y_net = net.predict(x.reshape(-1, 1))
@@ -80,12 +81,12 @@ if __name__ == "__main__":
     plt.show()
 
     net_pred = net.predict(X_test)
-    accuracy = mean_squared_error(y_test, net_pred)
-    print(f"network test accuracy: {accuracy:.2f}")
+    mse = mean_squared_error(y_test, net_pred)
+    print(f"network test MSE: {mse:.4f}")
 
     mlp_pred = mlp.predict(X_test)
-    accuracy = mean_squared_error(y_test, mlp_pred)
-    print(f"sklearn test accuracy: {accuracy:.2f}")
+    mse = mean_squared_error(y_test, mlp_pred)
+    print(f"sklearn test MSE: {mse:.4f}")
 
     plt.title("Regression on Test Data")
     plt.scatter(X_test.T[0], y_test, c="k", ec="w", label="patterns")

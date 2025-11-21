@@ -11,7 +11,10 @@ class Network:
         learning_rate: float = 0.1,
         lam: float = 0.0001,  # regularization
         alpha: float = 0.5,  # momentum
+        tol: float = 1e-5,
         batch_size: int = 10,
+        early_stopping: bool = False,
+        validation_fraction: float = 0.1,
         max_iter: int = 200,
     ) -> None:
         self.hidden_layer_sizes = hidden_layer_sizes
@@ -33,7 +36,10 @@ class Network:
         self.learning_rate = learning_rate
         self.lam = lam
         self.alpha = alpha
+        self.tol = tol
         self.batch_size = batch_size
+        self.early_stopping = early_stopping
+        self.validation_fraction = validation_fraction
         self.max_iter = max_iter
 
     def forward(self, X: np.ndarray) -> np.ndarray:
@@ -50,9 +56,14 @@ class Network:
         # initialize first layer weights
         self.layers[0].init_weights(X.shape[1])
 
+        # indices for permutations
+        indices = np.array([i for i in range(X.shape[0])])
+
         self.loss_curve = []
+        prev_loss = 0.0
         for _ in range(self.max_iter):
             epoch_loss = 0.0
+            np.random.permutation(indices)
             for i in range(0, len(y), self.batch_size):
                 out = self.forward(X[i : i + self.batch_size, :])
                 error = out - y[i : i + self.batch_size].reshape(-1, 1)
@@ -64,11 +75,17 @@ class Network:
                 # penalty term (regularization)
                 penalty = 0.0
                 for l in self.layers:
-                    penalty += l.lam * np.sum(l.W * l.W)
+                    penalty += l.lam * np.sum(l.W**2)
 
                 epoch_loss += np.mean(error**2) + penalty
 
             self.loss_curve.append(epoch_loss / (len(y) / self.batch_size))
+
+            # stopping criteria
+            if abs(self.loss_curve[-1] - prev_loss) < self.tol:
+                break
+
+            prev_loss = self.loss_curve[-1]
 
     @property
     def loss(self) -> float:
@@ -83,7 +100,10 @@ class Classifier(Network):
         learning_rate: float = 0.1,
         lam: float = 0.0001,
         alpha: float = 0.5,
+        tol: float = 1e-5,
         batch_size: int = 10,
+        early_stopping: bool = False,
+        validation_fraction: float = 0.1,
         max_iter: int = 200,
     ) -> None:
         super().__init__(
@@ -92,7 +112,10 @@ class Classifier(Network):
             learning_rate=learning_rate,
             lam=lam,
             alpha=alpha,
+            tol=tol,
             batch_size=batch_size,
+            early_stopping=early_stopping,
+            validation_fraction=validation_fraction,
             max_iter=max_iter,
         )
 
@@ -120,7 +143,10 @@ class Regressor(Network):
         learning_rate: float = 0.1,
         lam: float = 0.0001,
         alpha: float = 0.5,
+        tol: float = 1e-5,
         batch_size: int = 10,
+        early_stopping: bool = False,
+        validation_fraction: float = 0.1,
         max_iter: int = 200,
     ) -> None:
         super().__init__(
@@ -129,7 +155,10 @@ class Regressor(Network):
             learning_rate=learning_rate,
             lam=lam,
             alpha=alpha,
+            tol=tol,
             batch_size=batch_size,
+            early_stopping=early_stopping,
+            validation_fraction=validation_fraction,
             max_iter=max_iter,
         )
 

@@ -34,6 +34,8 @@ class Layer:
     def backward(self, dloss: np.ndarray) -> np.ndarray:
         delta = dloss * self.activation[1](self.net)
 
+        old_W = self.W.copy()
+
         # compute gradients
         weights_gradient = self.out.T @ delta
         bias_gradient = np.sum(delta, axis=0)
@@ -50,4 +52,4 @@ class Layer:
 
         self.weight_gradient_old = weights_gradient
 
-        return delta @ self.W.T
+        return delta @ old_W.T

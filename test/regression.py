@@ -16,7 +16,7 @@ if __name__ == "__main__":
             n_features=1,
             n_informative=1,
             n_targets=1,
-            noise=2,
+            noise=1,
             random_state=42,
         )
     ]
@@ -30,10 +30,10 @@ if __name__ == "__main__":
     ]
 
     topology = (5,)
-    activation = "relu"
-    learning_rate = 0.001
+    activation = "tanh"
+    learning_rate = 0.01
     lam = 0.0001
-    alpha = 0.5
+    alpha = 0.9
     batch_size = 10
     max_iter = 500
 
@@ -59,8 +59,8 @@ if __name__ == "__main__":
 
     net.fit(X_train, y_train)
     mlp.fit(X_train, y_train)
-    print(f"network loss: {net.loss:.2f}")
-    print(f"sklearn loss: {mlp.loss_:.2f}")
+    print(f"network loss: {net.loss:.4f}")
+    print(f"sklearn loss: {mlp.loss_:.4f}")
 
     plt.plot(net.loss_curve, label="network")
     plt.plot(mlp.loss_curve_, label="sklearn")
@@ -68,12 +68,12 @@ if __name__ == "__main__":
     plt.show()
 
     net_pred = net.predict(X_train)
-    accuracy = mean_squared_error(y_train, net_pred)
-    print(f"network train accuracy: {accuracy:.2f}")
+    mse = mean_squared_error(y_train, net_pred)
+    print(f"network train MSE: {mse:.4f}")
 
     mlp_pred = mlp.predict(X_train)
-    accuracy = mean_squared_error(y_train, mlp_pred)
-    print(f"sklearn train accuracy: {accuracy:.2f}")
+    mse = mean_squared_error(y_train, mlp_pred)
+    print(f"sklearn train MSE: {mse:.4f}")
 
     x = np.linspace(X.T[0].min() - 0.1, X.T[0].max() + 0.1, 100)
     y_net = net.predict(x.reshape(-1, 1))
@@ -87,9 +87,9 @@ if __name__ == "__main__":
     plt.show()
 
     net_pred = net.predict(X_test)
-    accuracy = mean_squared_error(y_test, net_pred)
-    print(f"network test accuracy: {accuracy:.2f}")
+    mse = mean_squared_error(y_test, net_pred)
+    print(f"network test MSE: {mse:.4f}")
 
     mlp_pred = mlp.predict(X_test)
-    accuracy = mean_squared_error(y_test, mlp_pred)
-    print(f"sklearn test accuracy: {accuracy:.2f}")
+    mse = mean_squared_error(y_test, mlp_pred)
+    print(f"sklearn test accuracy: {mse:.4f}")

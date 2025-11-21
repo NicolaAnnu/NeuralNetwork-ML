@@ -16,7 +16,7 @@ if __name__ == "__main__":
         np.array(i) for i in train_test_split(X, y, test_size=0.2)
     ]
 
-    topology = (32,)
+    topology = (8,)
     activation = "tanh"
     learning_rate = 0.001
     lam = 0.001
@@ -30,6 +30,7 @@ if __name__ == "__main__":
         learning_rate=learning_rate,
         lam=lam,
         alpha=alpha,
+        tol=1e-5,
         batch_size=batch_size,
         max_iter=max_iter,
     )

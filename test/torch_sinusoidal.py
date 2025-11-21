@@ -11,7 +11,7 @@ from sklearn.preprocessing import StandardScaler
 # -----------------------------
 def create_dataset(n=500):
     X = np.linspace(-6, 6, n).reshape(-1, 1)
-    y = np.sin(X) + 0.3 * np.random.randn(n, 1)
+    y = np.sin(X) + 0.1 * np.random.randn(n, 1)
     return X, y
 
 
@@ -38,11 +38,9 @@ class MLP(nn.Module):
     def __init__(self):
         super().__init__()
         self.net = nn.Sequential(
-            nn.Linear(1, 32),
+            nn.Linear(1, 10),
             nn.Tanh(),
-            nn.Linear(32, 32),
-            nn.Tanh(),
-            nn.Linear(32, 1),
+            nn.Linear(10, 1),
         )
 
     def forward(self, x):
