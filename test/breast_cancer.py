@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.datasets import load_breast_cancer
-from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
@@ -55,17 +54,17 @@ if __name__ == "__main__":
     plt.show()
 
     net_pred = net.predict(X_train)
-    accuracy = accuracy_score(y_train, net_pred)
+    accuracy = np.mean(net_pred == y_train)
     print(f"network train accuracy: {accuracy:.2f}")
 
     mlp_pred = mlp.predict(X_train)
-    accuracy = accuracy_score(y_train, mlp_pred)
+    accuracy = np.mean(mlp_pred == y_train)
     print(f"sklearn train accuracy: {accuracy:.2f}")
 
     net_pred = net.predict(X_test)
-    accuracy = accuracy_score(y_test, net_pred)
+    accuracy = np.mean(net_pred == y_test)
     print(f"network test accuracy: {accuracy:.2f}")
 
     mlp_pred = mlp.predict(X_test)
-    accuracy = accuracy_score(y_test, mlp_pred)
+    accuracy = np.mean(mlp_pred == y_test)
     print(f"sklearn test accuracy: {accuracy:.2f}")

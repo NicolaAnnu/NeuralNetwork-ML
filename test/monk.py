@@ -1,12 +1,13 @@
 import argparse
 import pathlib
 import sys
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from sklearn.metrics import accuracy_score
+from metrics import Metrics
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import OneHotEncoder
 
@@ -66,19 +67,21 @@ if __name__ == "__main__":
     plt.plot(mlp.loss_curve_, label="sklearn")
     plt.legend()
     plt.show()
+    # Network
+net_pred = net.predict(X_train)
+accuracy = np.mean(net_pred == y_train)
+print(f"network train accuracy: {accuracy:.2f}")
 
-    net_pred = net.predict(X_train)
-    accuracy = accuracy_score(y_train, net_pred)
-    print(f"network train accuracy: {accuracy:.2f}")
+mlp_pred = mlp.predict(X_train)
+accuracy = np.mean(mlp_pred == y_train)
+print(f"sklearn train accuracy: {accuracy:.2f}")
 
-    mlp_pred = mlp.predict(X_train)
-    accuracy = accuracy_score(y_train, mlp_pred)
-    print(f"sklearn train accuracy: {accuracy:.2f}")
+# Test set
+net_pred = net.predict(X_test)
+accuracy = np.mean(net_pred == y_test)
+print(f"network test accuracy: {accuracy:.2f}")
 
-    net_pred = net.predict(X_test)
-    accuracy = accuracy_score(y_test, net_pred)
-    print(f"network test accuracy: {accuracy:.2f}")
+mlp_pred = mlp.predict(X_test)
+accuracy = np.mean(mlp_pred == y_test)
+print(f"sklearn test accuracy: {accuracy:.2f}")
 
-    mlp_pred = mlp.predict(X_test)
-    accuracy = accuracy_score(y_test, mlp_pred)
-    print(f"sklearn test accuracy: {accuracy:.2f}")
