@@ -71,6 +71,7 @@ if __name__ == "__main__":
     y_net = net.predict(x.reshape(-1, 1))
     y_mlp = mlp.predict(x.reshape(-1, 1))
 
+    plt.title("Regression on Training Data")
     plt.scatter(X_train.T[0], y_train, c="k", ec="w", label="patterns")
     plt.plot(x, y_net, "r-", label="network")
     plt.plot(x, y_mlp, "b-", label="sklearn")
@@ -85,3 +86,11 @@ if __name__ == "__main__":
     mlp_pred = mlp.predict(X_test)
     accuracy = mean_squared_error(y_test, mlp_pred)
     print(f"sklearn test accuracy: {accuracy:.2f}")
+
+    plt.title("Regression on Test Data")
+    plt.scatter(X_test.T[0], y_test, c="k", ec="w", label="patterns")
+    plt.plot(x, y_net, "r-", label="network")
+    plt.plot(x, y_mlp, "b-", label="sklearn")
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
