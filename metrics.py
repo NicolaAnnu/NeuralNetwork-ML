@@ -20,7 +20,6 @@ class Metrics:
         if not ("accuracy" in self.metrics or "accuracy_score" in self.metrics):
             return
 
-
         labels = np.unique(np.concatenate([oracle, out]))
         num_classes = len(labels)
 

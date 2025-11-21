@@ -2,7 +2,7 @@ import numpy as np
 
 from neural.activations import activations
 
-
+ 
 class Layer:
     def __init__(
         self,
