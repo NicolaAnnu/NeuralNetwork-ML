@@ -1,5 +1,4 @@
 import numpy as np
-import numpy.linalg as la
 
 from neural.layer import Layer
 
@@ -58,13 +57,14 @@ class Network:
                 out = self.forward(X[i : i + self.batch_size, :])
                 error = out - y[i : i + self.batch_size].reshape(-1, 1)
 
+                # backpropagation
+                dloss = 2 * error
+                self.backward(dloss)
+
                 # penalty term (regularization)
                 penalty = 0.0
                 for l in self.layers:
-                    penalty += l.lam * la.norm(l.W, ord=2) ** 2
-
-                dloss = 2 * (error + penalty)
-                self.backward(dloss)
+                    penalty += l.lam * np.sum(l.W * l.W)
 
                 epoch_loss += np.mean(error**2) + penalty
 
