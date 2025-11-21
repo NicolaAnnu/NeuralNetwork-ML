@@ -7,7 +7,7 @@ sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from metrics import Metrics
+# from metrics import Metrics
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import OneHotEncoder
 
