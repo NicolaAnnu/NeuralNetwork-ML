@@ -1,4 +1,7 @@
 import argparse
+import pathlib
+import sys
+sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 
 import matplotlib.pyplot as plt
 import numpy as np
