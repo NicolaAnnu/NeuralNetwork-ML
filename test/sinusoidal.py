@@ -20,11 +20,11 @@ if __name__ == "__main__":
         np.array(i) for i in train_test_split(X, y, test_size=0.2)
     ]
 
-    topology = (20,)
+    topology = (10,)
     activation = "tanh"
-    learning_rate = 0.001
+    learning_rate = 0.01
     lam = 0.0001
-    alpha = 0.7
+    alpha = 0.9
     batch_size = 10
     max_iter = 1000
 
