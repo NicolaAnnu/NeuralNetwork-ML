@@ -26,9 +26,9 @@ if __name__ == "__main__":
     X_train = encoder.fit_transform(X_train)
     X_test = np.asarray(encoder.transform(X_test))
 
-    topology = (5,)
+    topology = (3,)
     activation = "tanh"
-    learning_rate = 0.01
+    learning_rate = 0.03
     lam = 0.0001
     alpha = 0.9
     batch_size = 10
