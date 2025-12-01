@@ -56,14 +56,10 @@ class Network:
         # initialize first layer weights
         self.layers[0].init_weights(X.shape[1])
 
-        # indices for permutations
-        indices = np.array([i for i in range(X.shape[0])])
-
         self.loss_curve = []
         prev_loss = 0.0
         for _ in range(self.max_iter):
             epoch_loss = 0.0
-            np.random.permutation(indices)
             for i in range(0, len(y), self.batch_size):
                 out = self.forward(X[i : i + self.batch_size, :])
                 error = out - y[i : i + self.batch_size].reshape(-1, 1)
