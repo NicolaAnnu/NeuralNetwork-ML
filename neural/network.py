@@ -76,11 +76,11 @@ class Network:
                 error = out - y[batch_idx].reshape(-1, 1)
 
                 # backpropagation
-                self.backward(2 * error)
+                self.backward(2 * error / out.shape[0])
 
-                epoch_loss += np.mean(error**2)
+                epoch_loss += np.sum(error**2)
 
-            self.loss_curve.append(epoch_loss / (len(y) / self.batch_size))
+            self.loss_curve.append(epoch_loss / len(y))
 
             # stopping criteria
             if abs(self.loss_curve[-1] - prev_loss) < self.tol:
