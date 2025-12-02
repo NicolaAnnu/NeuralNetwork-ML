@@ -68,12 +68,7 @@ class Network:
                 dloss = 2 * error
                 self.backward(dloss)
 
-                # penalty term (regularization)
-                penalty = 0.0
-                for l in self.layers:
-                    penalty += l.lam * np.sum(l.W**2)
-
-                epoch_loss += np.mean(error**2) + penalty
+                epoch_loss += np.mean(error**2)
 
             self.loss_curve.append(epoch_loss / (len(y) / self.batch_size))
 

@@ -20,7 +20,7 @@ if __name__ == "__main__":
         np.array(i) for i in train_test_split(X, y, test_size=0.2)
     ]
 
-    topology = (10, 10, 10)
+    topology = (10,)
     activation = "logistic"
     learning_rate = 0.01
     lam = 0.0001

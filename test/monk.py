@@ -28,11 +28,11 @@ if __name__ == "__main__":
 
     topology = (3,)
     activation = "tanh"
-    learning_rate = 0.03
+    learning_rate = 0.01
     lam = 0.0001
     alpha = 0.9
     batch_size = 10
-    max_iter = 500
+    max_iter = 1000
 
     net = Classifier(
         hidden_layer_sizes=topology,
