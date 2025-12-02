@@ -22,11 +22,11 @@ if __name__ == "__main__":
 
     topology = (10,)
     activation = "tanh"
-    learning_rate = 0.001
+    learning_rate = 0.05
     lam = 0.0001
-    alpha = 0.7
-    batch_size = 64
-    max_iter = 500
+    alpha = 0.9
+    batch_size = 16
+    max_iter = 1000
 
     net = Regressor(
         hidden_layer_sizes=topology,
@@ -35,6 +35,7 @@ if __name__ == "__main__":
         lam=lam,
         alpha=alpha,
         batch_size=batch_size,
+        shuffle=True,
         max_iter=max_iter,
     )
 
@@ -47,6 +48,7 @@ if __name__ == "__main__":
         momentum=alpha,
         nesterovs_momentum=False,
         max_iter=max_iter,
+        batch_size=batch_size,
     )
 
     net.fit(X_train, y_train)

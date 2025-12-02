@@ -64,20 +64,18 @@ class Network:
         self.loss_curve = []
         prev_loss = 0.0
         for _ in range(self.max_iter):
-            epoch_loss = 0.0
-
             # shuffle the indices
             if self.shuffle:
                 np.random.shuffle(indices)
 
+            epoch_loss = 0.0
             for i in range(0, len(y), self.batch_size):
                 batch_idx = indices[i : i + self.batch_size]
                 out = self.forward(X[batch_idx])
                 error = out - y[batch_idx].reshape(-1, 1)
 
                 # backpropagation
-                self.backward(2 * error / out.shape[0])
-
+                self.backward(2 * error / len(batch_idx))
                 epoch_loss += np.sum(error**2)
 
             self.loss_curve.append(epoch_loss / len(y))
