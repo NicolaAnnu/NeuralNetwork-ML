@@ -6,7 +6,23 @@ course.
 ## Installation and Development
 
 In order to use the library and the notebooks it's suggested to work in a
-virtual environment:
+virtual environment. On Linux is possible to run the following script
+
+```bash
+source ./scripts/setup.sh
+```
+
+while on Windows is possible to run
+
+```bash
+./scripts/setup.bat
+```
+
+Both will create the environment, download packages, install the `neural`
+package containing the network implementation and activate the virtual
+environment.
+
+For a more manual way is possible to follow these equivalent instructions
 
 ```bash
 python -m venv .env # to create it
@@ -26,16 +42,20 @@ lastly you can install the network library with this command
 pip install -e .
 ```
 
-that install what's inside the `network` folder once and automatically detect
+that install what's inside the `neural` folder once and automatically detect
 changes, so that is not necessary to reinstall it every time.
 
 Now the library is visible from any location inside the project folder and so is
 possible to use also inside notebooks like:
 
 ```py
-from network.neuron import Neuron
+from neural.network import Classifier
 
-model = Neuron()
+model = Classifier()
 model.fit(X, y)
 predictions = model.predict(X)
 ```
+
+**NOTE**: Some packages like tensorflow and pytorch will not be downloaded by
+default due to their size and possibly high download time. The choice to install
+them is left to the user.
