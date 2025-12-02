@@ -56,11 +56,11 @@ class Layer:
         momentum_w = self.alpha * self.old_delta_w
         momentum_b = self.alpha * self.old_delta_b
 
-        # update weights and bias through learning rule
+        # update weights and bias
         self.W -= delta_w + momentum_w + penalty
         self.b -= delta_b + momentum_b
 
-        # memorize regularized gradients for next momentum
+        # memorize scaled gradients for next momentum
         self.old_delta_w = delta_w
         self.old_delta_b = delta_b
 

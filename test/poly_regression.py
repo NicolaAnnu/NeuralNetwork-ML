@@ -21,11 +21,11 @@ if __name__ == "__main__":
     ]
 
     topology = (10,)
-    activation = "logistic"
-    learning_rate = 0.01
+    activation = "tanh"
+    learning_rate = 0.001
     lam = 0.0001
-    alpha = 0.9
-    batch_size = 10
+    alpha = 0.7
+    batch_size = 64
     max_iter = 500
 
     net = Regressor(

@@ -22,11 +22,12 @@ if __name__ == "__main__":
 
     topology = (10,)
     activation = "tanh"
-    learning_rate = 0.005
+    learning_rate = 0.001
     lam = 0.0001
-    alpha = 0.9
-    batch_size = 16
-    max_iter = 500
+    alpha = 0.7
+    batch_size = 32
+    shuffle = False
+    max_iter = 1000
 
     net = Regressor(
         hidden_layer_sizes=topology,
@@ -35,6 +36,7 @@ if __name__ == "__main__":
         lam=lam,
         alpha=alpha,
         batch_size=batch_size,
+        shuffle=shuffle,
         max_iter=max_iter,
     )
 
@@ -46,6 +48,7 @@ if __name__ == "__main__":
         learning_rate_init=learning_rate,
         momentum=alpha,
         nesterovs_momentum=False,
+        shuffle=shuffle,
         max_iter=max_iter,
     )
 

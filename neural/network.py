@@ -13,6 +13,7 @@ class Network:
         alpha: float = 0.5,  # momentum
         tol: float = 1e-5,
         batch_size: int = 10,
+        shuffle: bool = False,
         early_stopping: bool = False,
         validation_fraction: float = 0.1,
         max_iter: int = 200,
@@ -38,6 +39,7 @@ class Network:
         self.alpha = alpha
         self.tol = tol
         self.batch_size = batch_size
+        self.shuffle = shuffle
         self.early_stopping = early_stopping
         self.validation_fraction = validation_fraction
         self.max_iter = max_iter
@@ -56,17 +58,25 @@ class Network:
         # initialize first layer weights
         self.layers[0].init_weights(X.shape[1])
 
+        # indices to shuffle samples
+        indices = np.arange(X.shape[0])
+
         self.loss_curve = []
         prev_loss = 0.0
         for _ in range(self.max_iter):
             epoch_loss = 0.0
+
+            # shuffle the indices
+            if self.shuffle:
+                np.random.shuffle(indices)
+
             for i in range(0, len(y), self.batch_size):
-                out = self.forward(X[i : i + self.batch_size, :])
-                error = out - y[i : i + self.batch_size].reshape(-1, 1)
+                batch_idx = indices[i : i + self.batch_size]
+                out = self.forward(X[batch_idx])
+                error = out - y[batch_idx].reshape(-1, 1)
 
                 # backpropagation
-                dloss = 2 * error
-                self.backward(dloss)
+                self.backward(2 * error)
 
                 epoch_loss += np.mean(error**2)
 
@@ -93,6 +103,7 @@ class Classifier(Network):
         alpha: float = 0.5,
         tol: float = 1e-5,
         batch_size: int = 10,
+        shuffle: bool = False,
         early_stopping: bool = False,
         validation_fraction: float = 0.1,
         max_iter: int = 200,
@@ -105,6 +116,7 @@ class Classifier(Network):
             alpha=alpha,
             tol=tol,
             batch_size=batch_size,
+            shuffle=shuffle,
             early_stopping=early_stopping,
             validation_fraction=validation_fraction,
             max_iter=max_iter,
@@ -136,6 +148,7 @@ class Regressor(Network):
         alpha: float = 0.5,
         tol: float = 1e-5,
         batch_size: int = 10,
+        shuffle: bool = False,
         early_stopping: bool = False,
         validation_fraction: float = 0.1,
         max_iter: int = 200,
@@ -148,6 +161,7 @@ class Regressor(Network):
             alpha=alpha,
             tol=tol,
             batch_size=batch_size,
+            shuffle=shuffle,
             early_stopping=early_stopping,
             validation_fraction=validation_fraction,
             max_iter=max_iter,
