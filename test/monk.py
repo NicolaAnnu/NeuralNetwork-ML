@@ -28,7 +28,7 @@ if __name__ == "__main__":
 
     topology = (3,)
     activation = "tanh"
-    learning_rate = 0.01
+    learning_rate = 0.3
     lam = 0.0001
     alpha = 0.9
     batch_size = 10
@@ -40,7 +40,8 @@ if __name__ == "__main__":
         learning_rate=learning_rate,
         lam=lam,
         alpha=alpha,
-        batch_size=batch_size,
+        batch_size=-1,
+        shuffle=True,
         max_iter=max_iter,
     )
 

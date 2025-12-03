@@ -11,7 +11,7 @@ class Network:
         learning_rate: float = 0.1,
         lam: float = 0.0001,  # regularization
         alpha: float = 0.5,  # momentum
-        tol: float = 1e-5,
+        tol: float = 1e-4,
         batch_size: int = 10,
         shuffle: bool = False,
         early_stopping: bool = False,
@@ -58,11 +58,15 @@ class Network:
         # initialize first layer weights
         self.layers[0].init_weights(X.shape[1])
 
+        if self.batch_size == -1:
+            self.batch_size = X.shape[0]
+
         # indices to shuffle samples
         indices = np.arange(X.shape[0])
 
         self.loss_curve = []
-        prev_loss = 0.0
+        best_loss = np.inf
+        stop_counter = 0
         for _ in range(self.max_iter):
             # shuffle the indices
             if self.shuffle:
@@ -81,10 +85,14 @@ class Network:
             self.loss_curve.append(epoch_loss / len(y))
 
             # stopping criteria
-            if abs(self.loss_curve[-1] - prev_loss) < self.tol:
-                break
+            if (best_loss - self.loss_curve[-1]) < self.tol:
+                stop_counter += 1
+            else:
+                best_loss = self.loss_curve[-1]
+                stop_counter = 0
 
-            prev_loss = self.loss_curve[-1]
+            if stop_counter == 10:
+                break
 
     @property
     def loss(self) -> float:
@@ -99,7 +107,7 @@ class Classifier(Network):
         learning_rate: float = 0.1,
         lam: float = 0.0001,
         alpha: float = 0.5,
-        tol: float = 1e-5,
+        tol: float = 1e-4,
         batch_size: int = 10,
         shuffle: bool = False,
         early_stopping: bool = False,
@@ -144,7 +152,7 @@ class Regressor(Network):
         learning_rate: float = 0.1,
         lam: float = 0.0001,
         alpha: float = 0.5,
-        tol: float = 1e-5,
+        tol: float = 1e-4,
         batch_size: int = 10,
         shuffle: bool = False,
         early_stopping: bool = False,
