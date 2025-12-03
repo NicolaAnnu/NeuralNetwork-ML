@@ -1,19 +1,9 @@
 from itertools import product
 
 import numpy as np
-from joblib import Parallel, delayed
 from sklearn.model_selection import train_test_split
 
 from neural.network import Classifier, Regressor
-
-
-def train_and_score(model_type, params, X_train, y_train, X_val, y_val, score_metric):
-    model = model_type(**params)
-    model.fit(X_train, y_train)
-    pred = model.predict(X_val)
-    score = score_metric(y_val, pred)
-
-    return score, model
 
 
 def grid_search(
@@ -33,23 +23,22 @@ def grid_search(
         X, y, test_size=validation_fraction, random_state=42
     )
 
-    results = Parallel(n_jobs=-1)(
-        delayed(train_and_score)(
-            model_type,
-            {k: v for k, v in zip(keys, comb)},  # params
-            X_train,
-            y_train,
-            X_val,
-            y_val,
-            score_metric,
-        )
-        for comb in combinations
-    )
+    best_score = -np.inf
+    best_model = None
+    for comb in combinations:
+        params = {k: v for k, v in zip(keys, comb)}
 
-    # Scegli il migliore
-    best_score, best_model = max(results, key=lambda x: x[0])
+        model = model_type(**params)
+        model.fit(X_train, y_train)
 
-    if retrain:
+        predictions = model.predict(X_val)
+        score = score_metric(y_val, predictions)
+
+        if score > best_score:
+            best_score = score
+            best_model = model
+
+    if retrain and best_model is not None:
         best_model.fit(X, y)
 
     return best_model

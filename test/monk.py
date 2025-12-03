@@ -31,13 +31,13 @@ if __name__ == "__main__":
     X_test = scaler.transform(X_test)
 
     hyperparams = {
-        "hidden_layer_sizes": [(3,), (5,), (10,)],
+        "hidden_layer_sizes": [(3,), (5,)],
         "activation": ["logistic", "tanh"],
-        "learning_rate": [0.01, 0.03, 0.1],
+        "learning_rate": [0.01, 0.03],
         "lam": [0.0, 0.0001],
         "alpha": [0.0, 0.5, 0.9],
         "tol": [1e-4, 1e-6],
-        "batch_size": [8, 16, 32],
+        "batch_size": [8, 16],
         "shuffle": [False, True],
         "max_iter": [1000],
     }
