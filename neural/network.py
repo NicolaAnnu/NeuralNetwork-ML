@@ -14,8 +14,6 @@ class Network:
         tol: float = 1e-4,
         batch_size: int = 10,
         shuffle: bool = False,
-        early_stopping: bool = False,
-        validation_fraction: float = 0.1,
         max_iter: int = 200,
     ) -> None:
         self.hidden_layer_sizes = hidden_layer_sizes
@@ -29,10 +27,6 @@ class Network:
             for units in hidden_layer_sizes
         ]
 
-        # initialize hidden layers weights
-        for i in range(1, len(self.layers), 1):
-            self.layers[i].init_weights(self.layers[i - 1].units)
-
         self.activation = activation
         self.learning_rate = learning_rate
         self.lam = lam
@@ -40,9 +34,12 @@ class Network:
         self.tol = tol
         self.batch_size = batch_size
         self.shuffle = shuffle
-        self.early_stopping = early_stopping
-        self.validation_fraction = validation_fraction
         self.max_iter = max_iter
+
+    def init_weights(self, input_size):
+        for layer in self.layers:
+            layer.init_weights(input_size)
+            input_size = layer.units
 
     def forward(self, X: np.ndarray) -> np.ndarray:
         for l in self.layers:
@@ -55,8 +52,8 @@ class Network:
             dloss = l.backward(dloss)
 
     def fit(self, X, y):
-        # initialize first layer weights
-        self.layers[0].init_weights(X.shape[1])
+        # initialize weights
+        self.init_weights(X.shape[1])
 
         if self.batch_size == -1:
             self.batch_size = X.shape[0]
@@ -110,8 +107,6 @@ class Classifier(Network):
         tol: float = 1e-4,
         batch_size: int = 10,
         shuffle: bool = False,
-        early_stopping: bool = False,
-        validation_fraction: float = 0.1,
         max_iter: int = 200,
     ) -> None:
         super().__init__(
@@ -123,8 +118,6 @@ class Classifier(Network):
             tol=tol,
             batch_size=batch_size,
             shuffle=shuffle,
-            early_stopping=early_stopping,
-            validation_fraction=validation_fraction,
             max_iter=max_iter,
         )
 
@@ -155,8 +148,6 @@ class Regressor(Network):
         tol: float = 1e-4,
         batch_size: int = 10,
         shuffle: bool = False,
-        early_stopping: bool = False,
-        validation_fraction: float = 0.1,
         max_iter: int = 200,
     ) -> None:
         super().__init__(
@@ -168,8 +159,6 @@ class Regressor(Network):
             tol=tol,
             batch_size=batch_size,
             shuffle=shuffle,
-            early_stopping=early_stopping,
-            validation_fraction=validation_fraction,
             max_iter=max_iter,
         )
 

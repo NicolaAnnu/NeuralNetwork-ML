@@ -3,6 +3,8 @@ from itertools import product
 import numpy as np
 from sklearn.model_selection import train_test_split
 
+from neural.network import Classifier, Regressor
+
 
 def grid_search(
     model_type,
@@ -11,21 +13,24 @@ def grid_search(
     y: np.ndarray,
     validation_fraction: float,
     score_metric,
-):
-    combinations = product(*hyperparams.values())
+    retrain: bool = False,
+) -> Classifier | Regressor:
+    keys = list(hyperparams.keys())
+    values = list(hyperparams.values())
+    combinations = product(*values)
 
     X_train, X_val, y_train, y_val = train_test_split(
-        X, y, test_size=validation_fraction
+        X, y, test_size=validation_fraction, random_state=42
     )
 
-    best_score = 0.0
-    best_model = model_type()
+    best_score = -np.inf
+    best_model = None
     for comb in combinations:
-        for i, k in enumerate(hyperparams.keys()):
-            hyperparams[k] = comb[i]
+        params = {k: v for k, v in zip(keys, comb)}
 
-        model = model_type(**hyperparams)
+        model = model_type(**params)
         model.fit(X_train, y_train)
+
         predictions = model.predict(X_val)
         score = score_metric(y_val, predictions)
 
@@ -33,6 +38,7 @@ def grid_search(
             best_score = score
             best_model = model
 
-    best_model.fit(X, y)
+    if retrain and best_model is not None:
+        best_model.fit(X, y)
 
     return best_model
