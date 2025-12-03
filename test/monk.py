@@ -1,8 +1,4 @@
 import argparse
-import pathlib
-import sys
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
-sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -30,13 +26,13 @@ if __name__ == "__main__":
     X_train = encoder.fit_transform(X_train)
     X_test = np.asarray(encoder.transform(X_test))
 
-    topology = (5,)
+    topology = (3,)
     activation = "tanh"
-    learning_rate = 0.01
+    learning_rate = 0.3
     lam = 0.0001
     alpha = 0.9
     batch_size = 10
-    max_iter = 500
+    max_iter = 1000
 
     net = Classifier(
         hidden_layer_sizes=topology,
@@ -44,7 +40,8 @@ if __name__ == "__main__":
         learning_rate=learning_rate,
         lam=lam,
         alpha=alpha,
-        batch_size=batch_size,
+        batch_size=-1,
+        shuffle=True,
         max_iter=max_iter,
     )
 
@@ -67,21 +64,22 @@ if __name__ == "__main__":
     plt.plot(mlp.loss_curve_, label="sklearn")
     plt.legend()
     plt.show()
+    
     # Network
-net_pred = net.predict(X_train)
-accuracy = np.mean(net_pred == y_train)
-print(f"network train accuracy: {accuracy:.2f}")
+    net_pred = net.predict(X_train)
+    accuracy = np.mean(net_pred == y_train)
+    print(f"network train accuracy: {accuracy:.2f}")
 
-mlp_pred = mlp.predict(X_train)
-accuracy = np.mean(mlp_pred == y_train)
-print(f"sklearn train accuracy: {accuracy:.2f}")
+    mlp_pred = mlp.predict(X_train)
+    accuracy = np.mean(mlp_pred == y_train)
+    print(f"sklearn train accuracy: {accuracy:.2f}")
 
-# Test set
-net_pred = net.predict(X_test)
-accuracy = np.mean(net_pred == y_test)
-print(f"network test accuracy: {accuracy:.2f}")
+    # Test set
+    net_pred = net.predict(X_test)
+    accuracy = np.mean(net_pred == y_test)
+    print(f"network test accuracy: {accuracy:.2f}")
 
-mlp_pred = mlp.predict(X_test)
-accuracy = np.mean(mlp_pred == y_test)
-print(f"sklearn test accuracy: {accuracy:.2f}")
+    mlp_pred = mlp.predict(X_test)
+    accuracy = np.mean(mlp_pred == y_test)
+    print(f"sklearn test accuracy: {accuracy:.2f}")
 

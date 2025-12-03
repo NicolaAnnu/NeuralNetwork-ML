@@ -3,6 +3,8 @@ matplotlib
 pandas
 scipy
 scikit-learn
+# tensorflow
+# torch
 ucimlrepo
 ipykernel
 notebook

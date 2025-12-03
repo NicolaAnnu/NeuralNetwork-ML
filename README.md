@@ -3,6 +3,7 @@
 Implementazione didattica di una rete neurale feed forward con backpropagation, regolarizzazione L2, momentum e mini-batch. Include esempi per classificazione, regressione e notebook di supporto.
 
 ## Contenuto
+
 - `neural/`: strati fully connected, attivazioni (linear, logistic, tanh, relu) e classi `Network`, `Classifier`, `Regressor`.
 - `metrics.py`: confusion matrix e metriche base (accuracy, precision, recall, f1) con storico dell'accuracy.
 - `datasets/`: CSV per i dataset Monk's e ML-CUP gia inclusi.
@@ -11,6 +12,7 @@ Implementazione didattica di una rete neurale feed forward con backpropagation, 
 - `requirements.txt`, `pyproject.toml`: dipendenze e metadata del pacchetto `neural`.
 
 ## Installazione
+
 Consigliato Python 3.10 o superiore.
 
 ```bash
@@ -25,6 +27,7 @@ pip install -e .
 ```
 
 ## Uso rapido
+
 Esempio di classificazione binaria:
 
 ```py
@@ -66,6 +69,7 @@ y_hat = reg.predict(X_test)
 ```
 
 ## Eseguire gli esempi
+
 Lanciare gli script dalla radice del repository:
 
 ```bash
@@ -76,6 +80,7 @@ python test/monk.py 1   # dataset Monk's 1 (usa 1, 2 oppure 3)
 I grafici di loss e accuratezza vengono mostrati a video.
 
 ## Notebook
+
 Per esplorare gli esperimenti interattivi:
 
 ```bash

@@ -1,5 +1,4 @@
 import numpy as np
-import numpy.linalg as la
 
 from neural.layer import Layer
 
@@ -12,7 +11,11 @@ class Network:
         learning_rate: float = 0.1,
         lam: float = 0.0001,  # regularization
         alpha: float = 0.5,  # momentum
+        tol: float = 1e-4,
         batch_size: int = 10,
+        shuffle: bool = False,
+        early_stopping: bool = False,
+        validation_fraction: float = 0.1,
         max_iter: int = 200,
     ) -> None:
         self.hidden_layer_sizes = hidden_layer_sizes
@@ -34,7 +37,11 @@ class Network:
         self.learning_rate = learning_rate
         self.lam = lam
         self.alpha = alpha
+        self.tol = tol
         self.batch_size = batch_size
+        self.shuffle = shuffle
+        self.early_stopping = early_stopping
+        self.validation_fraction = validation_fraction
         self.max_iter = max_iter
 
     def forward(self, X: np.ndarray) -> np.ndarray:
@@ -51,24 +58,41 @@ class Network:
         # initialize first layer weights
         self.layers[0].init_weights(X.shape[1])
 
+        if self.batch_size == -1:
+            self.batch_size = X.shape[0]
+
+        # indices to shuffle samples
+        indices = np.arange(X.shape[0])
+
         self.loss_curve = []
+        best_loss = np.inf
+        stop_counter = 0
         for _ in range(self.max_iter):
+            # shuffle the indices
+            if self.shuffle:
+                np.random.shuffle(indices)
+
             epoch_loss = 0.0
             for i in range(0, len(y), self.batch_size):
-                out = self.forward(X[i : i + self.batch_size, :])
-                error = out - y[i : i + self.batch_size].reshape(-1, 1)
+                batch_idx = indices[i : i + self.batch_size]
+                out = self.forward(X[batch_idx])
+                error = out - y[batch_idx].reshape(-1, 1)
 
-                # penalty term (regularization)
-                penalty = 0.0
-                for l in self.layers:
-                    penalty += l.lam * la.norm(l.W, ord=2) ** 2
+                # backpropagation
+                self.backward(2 * error / len(batch_idx))
+                epoch_loss += np.sum(error**2)
 
-                dloss = 2 * (error + penalty)
-                self.backward(dloss)
+            self.loss_curve.append(epoch_loss / len(y))
 
-                epoch_loss += np.mean(error**2) + penalty
+            # stopping criteria
+            if (best_loss - self.loss_curve[-1]) < self.tol:
+                stop_counter += 1
+            else:
+                best_loss = self.loss_curve[-1]
+                stop_counter = 0
 
-            self.loss_curve.append(epoch_loss / (len(y) / self.batch_size))
+            if stop_counter == 10:
+                break
 
     @property
     def loss(self) -> float:
@@ -83,7 +107,11 @@ class Classifier(Network):
         learning_rate: float = 0.1,
         lam: float = 0.0001,
         alpha: float = 0.5,
+        tol: float = 1e-4,
         batch_size: int = 10,
+        shuffle: bool = False,
+        early_stopping: bool = False,
+        validation_fraction: float = 0.1,
         max_iter: int = 200,
     ) -> None:
         super().__init__(
@@ -92,7 +120,11 @@ class Classifier(Network):
             learning_rate=learning_rate,
             lam=lam,
             alpha=alpha,
+            tol=tol,
             batch_size=batch_size,
+            shuffle=shuffle,
+            early_stopping=early_stopping,
+            validation_fraction=validation_fraction,
             max_iter=max_iter,
         )
 
@@ -120,7 +152,11 @@ class Regressor(Network):
         learning_rate: float = 0.1,
         lam: float = 0.0001,
         alpha: float = 0.5,
+        tol: float = 1e-4,
         batch_size: int = 10,
+        shuffle: bool = False,
+        early_stopping: bool = False,
+        validation_fraction: float = 0.1,
         max_iter: int = 200,
     ) -> None:
         super().__init__(
@@ -129,7 +165,11 @@ class Regressor(Network):
             learning_rate=learning_rate,
             lam=lam,
             alpha=alpha,
+            tol=tol,
             batch_size=batch_size,
+            shuffle=shuffle,
+            early_stopping=early_stopping,
+            validation_fraction=validation_fraction,
             max_iter=max_iter,
         )
 
