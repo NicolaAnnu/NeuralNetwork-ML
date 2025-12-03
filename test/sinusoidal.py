@@ -20,14 +20,14 @@ if __name__ == "__main__":
         np.array(i) for i in train_test_split(X, y, test_size=0.2)
     ]
 
-    topology = (10,)
-    activation = "tanh"
-    learning_rate = 0.08
+    topology = (128, 128, 128)
+    activation = "relu"
+    learning_rate = 0.03
     lam = 0.0001
     alpha = 0.9
-    batch_size = 256
-    shuffle = True
-    max_iter = 1000
+    batch_size = 32
+    shuffle = False
+    max_iter = 5000
 
     net = Regressor(
         hidden_layer_sizes=topology,
@@ -35,6 +35,7 @@ if __name__ == "__main__":
         learning_rate=learning_rate,
         lam=lam,
         alpha=alpha,
+        tol=0,
         batch_size=batch_size,
         shuffle=shuffle,
         max_iter=max_iter,

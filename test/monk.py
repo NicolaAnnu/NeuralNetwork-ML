@@ -3,11 +3,11 @@ import argparse
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-# from metrics import Metrics
-from sklearn.neural_network import MLPClassifier
+from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import OneHotEncoder
 
 from neural.network import Classifier
+from neural.validation import grid_search
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -26,60 +26,40 @@ if __name__ == "__main__":
     X_train = encoder.fit_transform(X_train)
     X_test = np.asarray(encoder.transform(X_test))
 
-    topology = (3,)
-    activation = "tanh"
-    learning_rate = 0.3
-    lam = 0.0001
-    alpha = 0.9
-    batch_size = 10
-    max_iter = 1000
+    hyperparams = {
+        "hidden_layer_sizes": [(3,), (5,), (8,)],
+        "activation": ["logistic", "tanh", "relu"],
+        "learning_rate": [0.01, 0.03, 0.1],
+        "lam": [0.00005, 0.0001, 0.0002],
+        "alpha": [0.7, 0.9],
+        "batch_size": [8, 16, 32],
+        "shuffle": [False, True],
+        "max_iter": [500, 1000],
+    }
 
-    net = Classifier(
-        hidden_layer_sizes=topology,
-        activation=activation,
-        learning_rate=learning_rate,
-        lam=lam,
-        alpha=alpha,
-        batch_size=-1,
-        shuffle=True,
-        max_iter=max_iter,
+    indices = np.arange(X_train.shape[0])
+    np.random.shuffle(indices)
+
+    net = grid_search(
+        Classifier, hyperparams, X_train[indices], y_train[indices], 0.1, accuracy_score
     )
 
-    mlp = MLPClassifier(
-        hidden_layer_sizes=topology,
-        activation=activation,
-        solver="sgd",
-        alpha=lam,
-        learning_rate_init=learning_rate,
-        momentum=alpha,
-        max_iter=max_iter,
-    )
+    for k in hyperparams.keys():
+        print(f"{k}: {net.__dict__[k]}")
 
     net.fit(X_train, y_train)
-    mlp.fit(X_train, y_train)
     print(f"network loss: {net.loss:.2f}")
-    print(f"sklearn loss: {mlp.loss_:.2f}")
 
     plt.plot(net.loss_curve, label="network")
-    plt.plot(mlp.loss_curve_, label="sklearn")
     plt.legend()
     plt.show()
-    
+
     # Network
     net_pred = net.predict(X_train)
-    accuracy = np.mean(net_pred == y_train)
+    accuracy = accuracy_score(y_train, net_pred)
     print(f"network train accuracy: {accuracy:.2f}")
-
-    mlp_pred = mlp.predict(X_train)
-    accuracy = np.mean(mlp_pred == y_train)
-    print(f"sklearn train accuracy: {accuracy:.2f}")
 
     # Test set
     net_pred = net.predict(X_test)
-    accuracy = np.mean(net_pred == y_test)
+    accuracy = accuracy_score(y_test, net_pred)
     print(f"network test accuracy: {accuracy:.2f}")
-
-    mlp_pred = mlp.predict(X_test)
-    accuracy = np.mean(mlp_pred == y_test)
-    print(f"sklearn test accuracy: {accuracy:.2f}")
-
