@@ -25,6 +25,7 @@ class Network:
                 activation=activation,
                 learning_rate=learning_rate,
                 lam=lam,
+                alpha=alpha,
             )
             for units in hidden_layer_sizes
         ]
@@ -129,14 +130,17 @@ class Classifier(Network):
         )
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> None:
-        output = Layer(
+        if not hasattr (self, "_has_output") or not self._has_output:
+            output = Layer(
             units=1,
             activation="logistic",
             learning_rate=self.learning_rate,
             lam=self.lam,
+            alpha=self.alpha,
         )
         output.init_weights(self.layers[-1].units)
         self.layers.append(output)
+        self._has_output = True
 
         super().fit(X, y)
 

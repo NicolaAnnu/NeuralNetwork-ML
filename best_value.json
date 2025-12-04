@@ -1,3 +1,30 @@
 {
-    
+  "best_params_monk1": {
+    "hidden_layer_sizes": [3],
+    "activation": "tanh",
+    "learning_rate": 0.03,
+    "lam": 0.0,
+    "alpha": 0.5,
+    "tol": 0.0001,
+    "batch_size": 8,
+    "shuffle": false,
+    "max_iter": 1000
+  },
+
+    "best_params_monk2": {
+    "hidden_layer_sizes": [3],
+    "activation": "logistic",
+    "learning_rate": 0.03,
+    "lam": 0.0,
+    "alpha": 0.5,
+    "tol": 0.0001,
+    "batch_size": 8,
+    "shuffle": true,
+    "max_iter": 1000
+  },
+
+    "best_mean_5fold_score": 1.000,
+    "network_loss": 0.01,
+    "train_accuracy": 1.00,
+    "test_accuracy": 1.00
 }

@@ -45,19 +45,20 @@ class Layer:
         gradient_w = self.out.T @ delta
         gradient_b = np.sum(delta, axis=0)
 
+        # regularization penalty
+        penalty = 2 * self.lam * self.W
+
         # compute delta w and b for momentum
-        delta_w = self.learning_rate * gradient_w
+        delta_w = self.learning_rate * (gradient_w + penalty)
         delta_b = self.learning_rate * gradient_b
 
-        # regularization term
-        penalty = 2 * self.lam * self.W
 
         # momentum terms
         momentum_w = self.alpha * self.old_delta_w
         momentum_b = self.alpha * self.old_delta_b
 
         # update weights and bias
-        self.W -= delta_w + momentum_w + penalty
+        self.W -= delta_w + momentum_w
         self.b -= delta_b + momentum_b
 
         # memorize scaled gradients for next momentum

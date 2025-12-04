@@ -3,20 +3,11 @@ import argparse
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from sklearn.neural_network import MLPClassifier
-from sklearn.preprocessing import OneHotEncoder
-from itertools import product
+from sklearn.metrics import accuracy_score
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+
 from neural.network import Classifier
-
-
-def grid_search_params(hyperparameters):
-    keys = list(hyperparameters.keys())
-    values = list(hyperparameters.values())
-
-    for instance in product(*values):
-        params = dict(zip(keys, instance))
-        yield params
-
+from neural.validation import grid_search
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -35,62 +26,52 @@ if __name__ == "__main__":
     X_train = encoder.fit_transform(X_train)
     X_test = np.asarray(encoder.transform(X_test))
 
-    hyperparameters = {
-        "learning_rate": [0.3, 0.1, 0.01],
-        "activation": ["tanh", "logistic"],   
-        "lam": [0, 0.0001, 0.001],
-        "alpha": [0.0, 0.5, 0.9],
-        "batch_size": [8, 16, 32],
+    scaler = StandardScaler(with_mean=False)
+    X_train = scaler.fit_transform(X_train)
+    X_test = scaler.transform(X_test)
+
+    hyperparams = {
+        "hidden_layer_sizes": [(3,)],
+        "activation": ["logistic", "tanh"],
+        "learning_rate": [0.01, 0.03],
+        "lam": [0.0, 0.0001],
+        "alpha": [0.5, 0.9],
+        "tol": [1e-4, 1e-6],
+        "batch_size": [8, 16],
+        "shuffle": [False, True],
         "max_iter": [1000],
-        "tol": [1e-4, 1e-3, 1e-2],
-        "topology": [(3,), (5,)],
-        "shuffle": [True, False],
     }
 
-    best_params = None
-    best_accuracy = -np.inf
-    best_net = None
+    best_net, best_params, best_score = grid_search(
+    Classifier,
+    hyperparams,
+    X_train,
+    y_train,
+    n_splits=5,     
+    score_metric=accuracy_score,
+    retrain=True,
+)
+    
+    print("Best hyperparameters:")
+for k, v in best_params.items():
+    print(f"{k}: {v}")
 
-    for params in grid_search_params(hyperparameters):
-        print("Provo configurazione:", params)
+print(f"Best mean {5}-fold score: {best_score:.3f}")
 
-        # Crea la rete con questi iperparametri
-        net = Classifier(
-            hidden_layer_sizes=params["topology"],
-            activation=params["activation"],
-            learning_rate=params["learning_rate"],
-            lam=params["lam"],
-            alpha=params["alpha"],
-            batch_size=params["batch_size"],
-            shuffle=params["shuffle"],
-            max_iter=params["max_iter"],
-        )
+print(f"network loss: {best_net.loss:.2f}")
+plt.plot(best_net.loss_curve, label="network")
 
-        # Allena
-        net.fit(X_train, y_train)
+print("Boundary decision")
+plt.scatter(X_test[:, 0], X_test[:, 1], c="k",edgecolor="w",label="patterns")
+plt.legend()
+plt.show()
 
-        y_pred_train = net.predict(X_train)
-        train_acc = np.mean(y_pred_train == y_train)
-        print(f"Train accuracy: {train_acc:.3f}")
+# Network – train
+net_pred = best_net.predict(X_train)
+accuracy = accuracy_score(y_train, net_pred)
+print(f"network train accuracy: {accuracy:.2f}")
 
-        # Valutazione su test
-        y_pred_test = net.predict(X_test)
-        test_acc = np.mean(y_pred_test == y_test)
-        print(f"Test accuracy:  {test_acc:.3f}")
-
-        # Salvo il migliore in base alla test accuracy
-        if test_acc > best_accuracy:
-            best_accuracy = test_acc
-            best_params = params
-            best_net = net
-
-    print("Migliori iperparametri:")
-    for k, v in best_params.items():
-        print(f"  {k}: {v}")
-    print(f"Migliore test accuracy: {best_accuracy:.3f}")
-
-    # Se vuoi, puoi anche plottare la loss dell'ultimo/best modello
-    if hasattr(best_net, "loss_curve"):
-        plt.plot(best_net.loss_curve, label="network loss")
-        plt.legend()
-        plt.show()
+# Network – test
+net_pred = best_net.predict(np.asarray(X_test))
+accuracy = accuracy_score(y_test, net_pred)
+print(f"network test accuracy: {accuracy:.2f}")
