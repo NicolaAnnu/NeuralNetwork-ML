@@ -68,6 +68,22 @@ class Metrics:
         recall = self.recall()
         denom = precision + recall
         return 0 if denom == 0 else 2 * (precision * recall) / denom
+    
+    def error_rate(self) -> float:
+        total = self.true_pos + self.true_neg + self.false_pos + self.false_neg
+        return 0 if total == 0 else (self.false_pos + self.false_neg) / total
+
+    def specificity(self) -> float:
+        denom = self.true_neg + self.false_pos
+        return 0 if denom == 0 else self.true_neg / denom
+
+    def false_positive_rate(self) -> float:
+        denom = self.true_neg + self.false_pos
+        return 0 if denom == 0 else self.false_pos / denom
+
+    def false_negative_rate(self) -> float:
+        denom = self.true_pos + self.false_neg
+        return 0 if denom == 0 else self.false_neg / denom
 
     def plot(self) -> None:
         if "accuracy" in self.metrics:
