@@ -35,11 +35,11 @@ if __name__ == "__main__":
         "activation": ["logistic", "tanh"],
         "learning_rate": [0.01, 0.03],
         "lam": [0.0, 0.0001],
-        "alpha": [0.0, 0.5],
+        "alpha": [0.0, 0.7, 0.9],
         "tol": [1e-4],
-        "batch_size": [8],
-        "shuffle": [False],
-        "max_iter": [500],
+        "batch_size": [8, 16],
+        "shuffle": [False, True],
+        "max_iter": [500, 1000],
     }
 
     net = grid_search(

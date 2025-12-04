@@ -23,6 +23,7 @@ class Network:
                 activation=activation,
                 learning_rate=learning_rate,
                 lam=lam,
+                alpha=alpha,
             )
             for units in hidden_layer_sizes
         ]
@@ -127,6 +128,7 @@ class Classifier(Network):
             activation="logistic",
             learning_rate=self.learning_rate,
             lam=self.lam,
+            alpha=self.alpha,
         )
         output.init_weights(self.layers[-1].units)
         self.layers.append(output)
@@ -168,6 +170,7 @@ class Regressor(Network):
             activation="linear",
             learning_rate=self.learning_rate,
             lam=self.lam,
+            alpha=self.alpha,
         )
         output.init_weights(self.layers[-1].units)
         self.layers.append(output)

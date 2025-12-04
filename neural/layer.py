@@ -2,7 +2,7 @@ import numpy as np
 
 from neural.activations import activations
 
- 
+
 class Layer:
     def __init__(
         self,
@@ -22,7 +22,6 @@ class Layer:
         # Glorot-Xavier initialization
         limit = 1 / np.sqrt(n)
         self.W = np.random.uniform(-limit, limit, (n, self.units))
-
         self.b = np.zeros(self.units)
 
         # for momentum

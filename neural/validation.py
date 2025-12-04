@@ -20,7 +20,7 @@ def grid_search(
     combinations = product(*values)
 
     X_train, X_val, y_train, y_val = train_test_split(
-        X, y, test_size=validation_fraction, random_state=42
+        X, y, test_size=validation_fraction
     )
 
     best_score = -np.inf

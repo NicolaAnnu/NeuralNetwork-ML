@@ -17,12 +17,12 @@ if __name__ == "__main__":
     ]
 
     hyperparams = {
-        "hidden_layer_sizes": [(5,), (5, 5)],
+        "hidden_layer_sizes": [(5,), (10,)],
         "activation": ["tanh", "relu"],
         "learning_rate": [0.01, 0.03],
         "lam": [0.0, 0.0001],
-        "alpha": [0.0, 0.5, 0.7],
-        "batch_size": [16, 32, 64],
+        "alpha": [0.0, 0.5, 0.9],
+        "batch_size": [16, 32],
         "shuffle": [False, True],
         "max_iter": [1000],
     }
@@ -34,7 +34,7 @@ if __name__ == "__main__":
         y=y_train,
         validation_fraction=0.2,
         score_metric=accuracy_score,
-        retrain=True,
+        retrain=False,
     )
     for k in hyperparams.keys():
         print(f"{k}: {net.__dict__[k]}")
