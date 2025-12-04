@@ -19,11 +19,15 @@ class Layer:
         self.alpha = alpha
 
     def init_weights(self, n: int) -> None:
-        self.W = np.random.normal(0, 1, (n, self.units))
+        # Glorot-Xavier initialization
+        limit = 1 / np.sqrt(n)
+        self.W = np.random.uniform(-limit, limit, (n, self.units))
+
         self.b = np.zeros(self.units)
 
         # for momentum
-        self.weight_gradient_old = np.zeros_like(self.W)
+        self.old_delta_w = np.zeros_like(self.W)
+        self.old_delta_b = np.zeros_like(self.b)
 
     def forward(self, X: np.ndarray) -> np.ndarray:
         self.out = X
@@ -34,20 +38,30 @@ class Layer:
     def backward(self, dloss: np.ndarray) -> np.ndarray:
         delta = dloss * self.activation[1](self.net)
 
+        # compute the delta for the previous layer
+        delta_out = delta @ self.W.T
+
         # compute gradients
-        weights_gradient = self.out.T @ delta
-        bias_gradient = np.sum(delta, axis=0)
+        gradient_w = self.out.T @ delta
+        gradient_b = np.sum(delta, axis=0)
+
+        # compute delta w and b for momentum
+        delta_w = self.learning_rate * gradient_w
+        delta_b = self.learning_rate * gradient_b
 
         # regularization term
         penalty = 2 * self.lam * self.W
 
-        # momentum
-        momentum = self.alpha * self.weight_gradient_old
+        # momentum terms
+        momentum_w = self.alpha * self.old_delta_w
+        momentum_b = self.alpha * self.old_delta_b
 
-        # update weights and bias through learning rule
-        self.W -= self.learning_rate * (weights_gradient + momentum) + penalty
-        self.b -= self.learning_rate * bias_gradient
+        # update weights and bias
+        self.W -= delta_w + momentum_w + penalty
+        self.b -= delta_b + momentum_b
 
-        self.weight_gradient_old = weights_gradient
+        # memorize scaled gradients for next momentum
+        self.old_delta_w = delta_w
+        self.old_delta_b = delta_b
 
-        return delta @ self.W.T
+        return delta_out

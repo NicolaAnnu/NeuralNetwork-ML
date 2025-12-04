@@ -29,7 +29,7 @@ def relu_d(x):
 # 2. its derivative
 
 activations = {
-    "linear": (lambda x: x, lambda _: 1),
+    "linear": (lambda x: x, lambda x: np.ones_like(x)),
     "logistic": (logistic, logistic_d),
     "tanh": (np.tanh, tanh_d),
     "relu": (relu, relu_d),
