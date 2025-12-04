@@ -38,7 +38,8 @@ def grid_search(
             best_score = score
             best_model = model
 
-    if retrain and best_model is not None:
+    assert best_model is not None
+    if retrain:
         best_model.fit(X, y)
 
     return best_model
