@@ -9,6 +9,27 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from neural.network import Classifier
 from neural.validation import grid_search
 
+
+def stats(net, score, hyperparams, X_train, X_test, y_train, y_test):
+    print(f"validation score: {score:.4f}")
+
+    for k in hyperparams.keys():
+        print(f"{k}: {net.__dict__[k]}")
+
+    print(f"converged in {len(net.loss_curve)} epochs")
+    print(f"loss: {net.loss:.4f}")
+
+    # training accuracy
+    net_pred = net.predict(X_train)
+    accuracy = accuracy_score(y_train, net_pred)
+    print(f"train accuracy: {accuracy:.2f}")
+
+    # test accuracy
+    net_pred = net.predict(X_test)
+    accuracy = accuracy_score(y_test, net_pred)
+    print(f"test accuracy: {accuracy:.2f}")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("id", type=int, help="monk dataset ID")
@@ -32,39 +53,31 @@ if __name__ == "__main__":
 
     hyperparams = {
         "hidden_layer_sizes": [(3,), (5,)],
-        "activation": ["logistic", "tanh"],
-        "learning_rate": [0.01, 0.03],
+        "activation": ["logistic", "tanh", "relu"],
+        "learning_rate": [0.001, 0.003, 0.01, 0.03],
         "lam": [0.0, 0.0001],
-        "alpha": [0.0, 0.7, 0.9],
-        "tol": [1e-4],
-        "batch_size": [8, 16],
+        "alpha": [0.0, 0.7],
+        "tol": [1e-5],
+        "batch_size": [8, 16, 32],
         "shuffle": [False, True],
-        "max_iter": [500, 1000],
+        "max_iter": [2000],
     }
 
-    net = grid_search(
-        Classifier,
-        hyperparams,
-        X_train,
-        y_train,
-        0.1,
-        accuracy_score,
+    net, score = grid_search(
+        model_type=Classifier,
+        hyperparams=hyperparams,
+        X=X_train,
+        y=y_train,
+        validation_fraction=0.1,
+        score_metric=accuracy_score,
         retrain=False,
     )
-    for k in hyperparams.keys():
-        print(f"{k}: {net.__dict__[k]}")
+    stats(net, score, hyperparams, X_train, X_test, y_train, y_test)
 
-    print(f"network loss: {net.loss:.2f}")
-    plt.plot(net.loss_curve, label="network")
+    plt.title("Loss Curve")
+    plt.plot(net.loss_curve, label="loss")
+    plt.xlabel("Epochs")
+    plt.ylabel("Loss")
     plt.legend()
+    plt.tight_layout()
     plt.show()
-
-    # Network
-    net_pred = net.predict(X_train)
-    accuracy = accuracy_score(y_train, net_pred)
-    print(f"network train accuracy: {accuracy:.2f}")
-
-    # Test set
-    net_pred = net.predict(np.asarray(X_test))
-    accuracy = accuracy_score(y_test, net_pred)
-    print(f"network test accuracy: {accuracy:.2f}")

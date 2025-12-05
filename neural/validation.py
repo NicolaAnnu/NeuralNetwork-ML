@@ -15,8 +15,7 @@ def train_and_score(model_type, params, X_train, X_val, y_train, y_val, score_me
         model.fit(X_train, y_train)
         predictions = model.predict(X_val)
         score = score_metric(y_val, predictions)
-    except Exception as e:
-        # print("model failed: ", params, "error: ", e)
+    except Exception:
         score = -np.inf
 
     return model, score

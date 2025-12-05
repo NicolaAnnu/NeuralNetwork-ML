@@ -35,7 +35,7 @@ def stats(net, score, hyperparams, X_train, X_test, y_train, y_test):
 
 if __name__ == "__main__":
     n = 500
-    X = np.linspace(-5, 5, n)
+    X = np.linspace(-6, 6, n)
     y = np.sin(X + 0.1 * np.random.randn(n))
     X = X.reshape(-1, 1)
 
@@ -55,7 +55,7 @@ if __name__ == "__main__":
         "alpha": [0.0, 0.7],
         "tol": [1e-5],
         "batch_size": [8, 16, 32, 64],
-        "shuffle": [False],
+        "shuffle": [False, True],
         "max_iter": [1000],
     }
 
@@ -90,11 +90,11 @@ if __name__ == "__main__":
 
     # fit plots
     plt.title("Regression")
-    plt.scatter(X_train.T[0], y_train, c="g", ec="w", label="train")
+    plt.scatter(X_train.T[0], y_train, c="b", ec="w", label="train")
     plt.scatter(X_test.T[0], y_test, c="r", ec="w", label="test")
 
-    plt.plot(x, y1, label="retrained")
-    plt.plot(x, y2, label="not retrained")
+    plt.plot(x, y1, c="grey", label="retrained")
+    plt.plot(x, y2, c="k", label="not retrained")
     plt.legend()
     plt.tight_layout()
     plt.show()
