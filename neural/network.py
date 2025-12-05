@@ -121,7 +121,6 @@ class Classifier(Network):
             max_iter=max_iter,
         )
 
-    def fit(self, X: np.ndarray, y: np.ndarray) -> None:
         output = Layer(
             units=1,
             activation="logistic",
@@ -129,9 +128,9 @@ class Classifier(Network):
             lam=self.lam,
             alpha=self.alpha,
         )
-        output.init_weights(self.layers[-1].units)
         self.layers.append(output)
 
+    def fit(self, X: np.ndarray, y: np.ndarray) -> None:
         super().fit(X, y)
 
     def predict(self, X: np.ndarray) -> np.ndarray:
@@ -163,7 +162,6 @@ class Regressor(Network):
             max_iter=max_iter,
         )
 
-    def fit(self, X: np.ndarray, y: np.ndarray) -> None:
         output = Layer(
             units=1,
             activation="linear",
@@ -171,9 +169,9 @@ class Regressor(Network):
             lam=self.lam,
             alpha=self.alpha,
         )
-        output.init_weights(self.layers[-1].units)
         self.layers.append(output)
 
+    def fit(self, X: np.ndarray, y: np.ndarray) -> None:
         super().fit(X, y)
 
     def predict(self, X: np.ndarray) -> np.ndarray:

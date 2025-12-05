@@ -9,7 +9,7 @@ from neural.validation import grid_search
 
 if __name__ == "__main__":
     n = 500
-    X = np.linspace(-6, 6, n)
+    X = np.linspace(-10, 10, n)
     y = np.sin(X + 0.1 * np.random.randn(n))
     X = X.reshape(-1, 1)
 
@@ -21,70 +21,70 @@ if __name__ == "__main__":
         np.array(i) for i in train_test_split(X, y, test_size=0.1)
     ]
 
-    # hyperparams = {
-    #     "hidden_layer_sizes": [(16,), (32,)],
-    #     "activation": ["tanh"],
-    #     "learning_rate": [0.01, 0.03],
-    #     "lam": [0.0, 0.0001],
-    #     "alpha": [0.0, 0.9],
-    #     "tol": [1e-6],
-    #     "batch_size": [8],
-    #     "shuffle": [False],
-    #     "max_iter": [1000],
-    # }
-    #
-    # net, score = grid_search(
-    #     Regressor,
-    #     hyperparams,
-    #     X_train,
-    #     y_train,
-    #     0.1,
-    #     mean_squared_error,
-    #     retrain=True,
-    # )
-    # print(f"validation score: {score:.4f}")
-    #
-    # for k in hyperparams.keys():
-    #     print(f"{k}: {net.__dict__[k]}")
+    hyperparams = {
+        "hidden_layer_sizes": [(64, 64, 64)],
+        "activation": ["relu"],
+        "learning_rate": [0.003],
+        "lam": [0.0],
+        "alpha": [0.0],
+        "tol": [1e-6],
+        "batch_size": [16],
+        "shuffle": [False],
+        "max_iter": [1000],
+    }
 
-    net = Regressor(
-        hidden_layer_sizes=(32,),
-        activation="tanh",
-        learning_rate=0.01,
-        lam=0.0001,
-        alpha=0.7,
-        tol=1e-5,
-        batch_size=128,
-        max_iter=3000,
+    net, score = grid_search(
+        Regressor,
+        hyperparams,
+        X_train,
+        y_train,
+        0.1,
+        mean_squared_error,
+        retrain=True,
     )
-    net.fit(X_train, y_train)
+    print(f"validation score: {score:.4f}")
+
+    for k in hyperparams.keys():
+        print(f"{k}: {net.__dict__[k]}")
+
+    # net = Regressor(
+    #     hidden_layer_sizes=(128,),
+    #     activation="tanh",
+    #     learning_rate=0.001,
+    #     lam=0.00000,
+    #     alpha=0.0,
+    #     tol=1e-8,
+    #     batch_size=16,
+    #     max_iter=5000,
+    # )
+    # net.fit(X_train, y_train)
+
+    print(f"converged in {len(net.loss_curve)} epochs")
     print(f"loss: {net.loss:.4f}")
 
+    plt.title("Loss Curve")
     plt.plot(net.loss_curve, label="network")
-    plt.legend()
-    plt.show()
-
-    net_pred = net.predict(X_train)
-    mse = mean_squared_error(y_train, net_pred)
-    print(f"train MSE: {mse:.4f}")
-
-    x = np.linspace(X.T[0].min() - 0.1, X.T[0].max() + 0.1, 100)
-    y_net = net.predict(x.reshape(-1, 1))
-
-    plt.title("Regression on Training Data")
-    plt.scatter(X_train.T[0], y_train, c="k", ec="w", label="patterns")
-    plt.plot(x, y_net, "r-", label="network")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
     plt.legend()
     plt.tight_layout()
     plt.show()
 
-    net_pred = net.predict(X_test)
-    mse = mean_squared_error(y_test, net_pred)
+    train_pred = net.predict(X_train)
+    mse = mean_squared_error(y_train, train_pred)
+    print(f"train MSE: {mse:.4f}")
+
+    test_pred = net.predict(X_test)
+    mse = mean_squared_error(y_test, test_pred)
     print(f"test MSE: {mse:.4f}")
 
-    plt.title("Regression on Test Data")
-    plt.scatter(X_test.T[0], y_test, c="k", ec="w", label="patterns")
-    plt.plot(x, y_net, "r-", label="network")
+    x = np.linspace(X.T[0].min() - 0.1, X.T[0].max() + 0.1, 100)
+    y_net = net.predict(x.reshape(-1, 1))
+
+    plt.title("Regression")
+    plt.scatter(X_train.T[0], y_train, c="b", ec="w", label="train")
+    plt.scatter(X_test.T[0], y_test, c="r", ec="w", label="test")
+    plt.plot(x, y_net, "k-", label="network")
     plt.legend()
     plt.tight_layout()
     plt.show()
