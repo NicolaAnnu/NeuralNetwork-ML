@@ -19,9 +19,14 @@ class Layer:
         self.alpha = alpha
 
     def init_weights(self, n: int) -> None:
-        # Glorot-Xavier initialization
-        limit = 1 / np.sqrt(n)
-        self.W = np.random.uniform(-limit, limit, (n, self.units))
+        if self.activation == activations["relu"]:
+            # He initialization
+            self.W = np.random.normal(0, 2 / n, (n, self.units))
+        else:
+            # Glorot-Xavier initialization
+            limit = 1 / np.sqrt(n)
+            self.W = np.random.uniform(-limit, limit, (n, self.units))
+
         self.b = np.zeros(self.units)
 
         # for momentum
