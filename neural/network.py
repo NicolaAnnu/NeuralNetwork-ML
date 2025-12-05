@@ -70,20 +70,19 @@ class Network:
             if self.shuffle:
                 np.random.shuffle(indices)
 
-            epoch_loss = 0.0
             for i in range(0, len(y), self.batch_size):
                 batch_idx = indices[i : i + self.batch_size]
                 out = self.forward(X[batch_idx])
                 error = out - y[batch_idx].reshape(-1, 1)
 
                 # backpropagation
-                self.backward(2 * error / len(batch_idx))
-                epoch_loss += np.sum(error**2)
+                self.backward(2 * error)
 
-            self.loss_curve.append(epoch_loss / len(y))
+            out = self.forward(X)[:, 0]
+            self.loss_curve.append(np.mean((out - y) ** 2))
 
             # stopping criteria
-            if (best_loss - self.loss_curve[-1]) < self.tol:
+            if abs(best_loss - self.loss_curve[-1]) < self.tol:
                 stop_counter += 1
             else:
                 best_loss = self.loss_curve[-1]

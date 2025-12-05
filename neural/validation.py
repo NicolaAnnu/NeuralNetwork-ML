@@ -1,9 +1,21 @@
 from itertools import product
 
 import numpy as np
+import psutil
+from joblib import Parallel, delayed
 from sklearn.model_selection import train_test_split
 
 from neural.network import Classifier, Regressor
+
+
+def train_and_score(model_type, params, X_train, X_val, y_train, y_val, score_metric):
+    model = model_type(**params)
+    model.fit(X_train, y_train)
+
+    predictions = model.predict(X_val)
+    score = score_metric(y_val, predictions)
+
+    return model, score
 
 
 def grid_search(
@@ -14,32 +26,36 @@ def grid_search(
     validation_fraction: float,
     score_metric,
     retrain: bool = False,
-) -> Classifier | Regressor:
+) -> tuple[Classifier | Regressor, float]:
     keys = list(hyperparams.keys())
     values = list(hyperparams.values())
-    combinations = product(*values)
+    combinations = list(product(*values))
+
+    print(f"start validation of {len(combinations)} models")
 
     X_train, X_val, y_train, y_val = train_test_split(
         X, y, test_size=validation_fraction
     )
 
-    best_score = -np.inf
-    best_model = None
-    for comb in combinations:
-        params = {k: v for k, v in zip(keys, comb)}
+    # use only physical cores
+    n_cpus = psutil.cpu_count(logical=False)
 
-        model = model_type(**params)
-        model.fit(X_train, y_train)
+    results = Parallel(n_jobs=n_cpus)(
+        delayed(train_and_score)(
+            model_type,
+            {k: v for k, v in zip(keys, comb)},
+            X_train,
+            X_val,
+            y_train,
+            y_val,
+            score_metric,
+        )
+        for comb in combinations
+    )
 
-        predictions = model.predict(X_val)
-        score = score_metric(y_val, predictions)
+    best_model, best_score = max(results, key=lambda x: x[1])
 
-        if score > best_score:
-            best_score = score
-            best_model = model
-
-    assert best_model is not None
     if retrain:
         best_model.fit(X, y)
 
-    return best_model
+    return best_model, best_score
