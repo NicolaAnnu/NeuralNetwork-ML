@@ -49,24 +49,24 @@ if __name__ == "__main__":
 
     hyperparams = {
         "hidden_layer_sizes": [(32,)],
-        "activation": ["logistic", "tanh"],
-        "learning_rate": [0.001, 0.003, 0.01, 0.03],
+        "activation": ["tanh"],
+        "learning_rate": [0.001, 0.003, 0.3],
         "lam": [0.0, 0.0001],
-        "alpha": [0.0, 0.7],
+        "alpha": [0.0],
         "tol": [1e-5],
-        "batch_size": [8, 16, 32, 64],
-        "shuffle": [False, True],
+        "batch_size": [8, 16, 128],
+        "shuffle": [False],
         "max_iter": [1000],
     }
 
     net, score = grid_search(
-        Regressor,
-        hyperparams,
-        X_train,
-        y_train,
-        0.1,
-        neg_mean_squared_error,
-        retrain=False,
+        model_type=Regressor,
+        hyperparams=hyperparams,
+        X=X_train,
+        y=y_train,
+        k=5,
+        score_metric=neg_mean_squared_error,
+        retrain=True,
     )
     stats(net, score, hyperparams, X_train, X_test, y_train, y_test)
     net1_loss = net.loss_curve.copy()

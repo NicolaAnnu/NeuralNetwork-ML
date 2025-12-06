@@ -68,7 +68,7 @@ if __name__ == "__main__":
         hyperparams=hyperparams,
         X=X_train,
         y=y_train,
-        validation_fraction=0.1,
+        k=10,
         score_metric=accuracy_score,
         retrain=False,
     )
