@@ -21,6 +21,7 @@ scaler_y = StandardScaler()
 y = scaler_y.fit_transform(y.reshape(-1, 1)).T[0]
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
+assert isinstance(X_train, np.ndarray)
 
 # --- Parametri rete ---
 topology = (10,)
@@ -49,7 +50,7 @@ optimizer = SGD(learning_rate=learning_rate, momentum=momentum)
 model.compile(optimizer=optimizer, loss="mse")
 
 # Fit
-history = model.fit(X_train, y_train, epochs=max_iter, batch_size=batch_size, verbose=0)
+history = model.fit(X_train, y_train, epochs=max_iter, batch_size=batch_size)
 
 # Loss curve
 plt.plot(history.history["loss"], label="Keras")

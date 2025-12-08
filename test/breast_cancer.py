@@ -27,12 +27,12 @@ if __name__ == "__main__":
         "max_iter": [1000],
     }
 
-    net = grid_search(
+    net, score = grid_search(
         model_type=Classifier,
         hyperparams=hyperparams,
         X=X_train,
         y=y_train,
-        validation_fraction=0.2,
+        k=5,
         score_metric=accuracy_score,
         retrain=False,
     )

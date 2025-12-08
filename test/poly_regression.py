@@ -48,7 +48,6 @@ if __name__ == "__main__":
         momentum=alpha,
         nesterovs_momentum=False,
         max_iter=max_iter,
-        batch_size=batch_size,
     )
 
     net.fit(X_train, y_train)

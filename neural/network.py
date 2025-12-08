@@ -43,14 +43,14 @@ class Network:
             input_size = layer.units
 
     def forward(self, X: np.ndarray) -> np.ndarray:
-        for l in self.layers:
-            X = l.forward(X)
+        for layer in self.layers:
+            X = layer.forward(X)
 
         return X
 
     def backward(self, dloss: np.ndarray) -> None:
-        for l in reversed(self.layers):
-            dloss = l.backward(dloss)
+        for layer in reversed(self.layers):
+            dloss = layer.backward(dloss)
 
     def fit(self, X, y):
         # initialize weights

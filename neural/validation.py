@@ -7,25 +7,27 @@ from joblib import Parallel, delayed
 from neural.network import Classifier, Regressor
 
 
-def sdiv(n, k):
+def kfold(n, k):
     q = n // k
     r = n % k
 
     ranges = []
-    for i in range(k):
-        start = i * q + min(r, i)
-        end = start + q + (1 if i < r else 0)
+    start = 0
+    for _ in range(k):
+        end = start + q + (1 if r > 0 else 0)
         ranges.append([start, end])
+        start = end
+        r -= 1
 
     return ranges
 
 
 def train_and_score(model_type, params, X, y, k, score_metric):
     mask = y != y
-    ranges = sdiv(X.shape[0], k)
+    folds = kfold(X.shape[0], k)
 
     scores = []
-    for start, end in ranges:
+    for start, end in folds:
         mask[start:end] = True
 
         X_val = X[mask]
@@ -61,8 +63,6 @@ def grid_search(
     keys = list(hyperparams.keys())
     values = list(hyperparams.values())
     combinations = list(product(*values))
-
-    print(f"start validation of {len(combinations)} models")
 
     # use only physical cores
     n_cpus = psutil.cpu_count(logical=False)
