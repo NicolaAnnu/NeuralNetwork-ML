@@ -7,28 +7,8 @@ from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 from neural.network import Classifier
+from neural.utils import stats
 from neural.validation import grid_search
-
-
-def stats(net, score, hyperparams, X_train, X_test, y_train, y_test):
-    print(f"validation score: {score:.4f}")
-
-    for k in hyperparams.keys():
-        print(f"{k}: {net.__dict__[k]}")
-
-    print(f"converged in {len(net.loss_curve)} epochs")
-    print(f"loss: {net.loss:.4f}")
-
-    # training accuracy
-    net_pred = net.predict(X_train)
-    accuracy = accuracy_score(y_train, net_pred)
-    print(f"train accuracy: {accuracy:.2f}")
-
-    # test accuracy
-    net_pred = net.predict(X_test)
-    accuracy = accuracy_score(y_test, net_pred)
-    print(f"test accuracy: {accuracy:.2f}")
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -45,20 +25,20 @@ if __name__ == "__main__":
 
     encoder = OneHotEncoder(sparse_output=False)
     X_train = encoder.fit_transform(X_train)
-    X_test = np.asarray(encoder.transform(X_test))
+    X_test = encoder.transform(X_test)
 
     scaler = StandardScaler(with_mean=False)
     X_train = scaler.fit_transform(X_train)
-    X_test = scaler.transform(X_test)
+    X_test = np.asarray(scaler.transform(X_test))
 
     hyperparams = {
-        "hidden_layer_sizes": [(3,), (5,)],
+        "hidden_layer_sizes": [(3,)],
         "activation": ["logistic", "tanh"],
-        "learning_rate": [0.001, 0.003, 0.01, 0.03],
-        "lam": [0.0, 0.00005, 0.0001],
-        "alpha": [0.0, 0.7, 0.9],
+        "learning_rate": [0.01, 0.03],
+        "lam": [0.0, 0.0001],
+        "alpha": [0.0, 0.9],
         "tol": [1e-5],
-        "batch_size": [8, 16, 32],
+        "batch_size": [8, 16],
         "shuffle": [False, True],
         "max_iter": [1000],
     }
@@ -70,8 +50,27 @@ if __name__ == "__main__":
         y=y_train,
         k=10,
         score_metric=accuracy_score,
+        log=True,
     )
-    stats(net, score, hyperparams, X_train, X_test, y_train, y_test)
+    # training accuracy
+    net_pred = net.predict(X_train)
+    train_score = accuracy_score(y_train, net_pred)
+    print(f"train accuracy: {train_score:.2f}")
+
+    # test accuracy
+    net_pred = net.predict(X_test)
+    test_score = accuracy_score(y_test, net_pred)
+    print(f"test accuracy: {test_score:.2f}")
+
+    # print stats and save results to json file
+    stats(
+        net,
+        hyperparams,
+        score,
+        train_score,
+        test_score,
+        f"results/monk{args.id}.json",
+    )
 
     plt.title("Loss Curve")
     plt.plot(net.loss_curve, label="loss")

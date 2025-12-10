@@ -1,3 +1,4 @@
+import json
 import multiprocessing as mp
 from functools import partial
 from itertools import product
@@ -24,7 +25,7 @@ def kfold(n, k):
     return ranges
 
 
-def train_and_score(params, model_type, X, y, k, score_metric):
+def train_and_score(model_type, X, y, k, score_metric, params):
     folds = kfold(X.shape[0], k)
 
     mask = np.array([False for _ in range(len(y))])
@@ -53,6 +54,14 @@ def train_and_score(params, model_type, X, y, k, score_metric):
     return np.mean(scores)
 
 
+def order(x: tuple):
+    score, params = x
+    hls = params["hidden_layer_sizes"]
+    lam = params["lam"]
+
+    return (score, -len(hls), -sum(hls), lam)
+
+
 def grid_search(
     model_type,
     hyperparams: dict,
@@ -60,14 +69,13 @@ def grid_search(
     y: np.ndarray,
     k: int,
     score_metric,
+    log: bool = True,
 ) -> tuple[Classifier | Regressor, float]:
     keys = list(hyperparams.keys())
     values = list(hyperparams.values())
     combinations = list(product(*values))
 
-    fn = partial(
-        train_and_score, model_type=model_type, X=X, y=y, k=k, score_metric=score_metric
-    )
+    fn = partial(train_and_score, model_type, X, y, k, score_metric)
     params = [{k: v for k, v in zip(keys, comb)} for comb in combinations]
 
     # use only physical cores
@@ -82,11 +90,19 @@ def grid_search(
         ):
             scores.append(res)
 
-    scores, params = zip(*sorted(zip(scores, params), key=lambda x: x[0], reverse=True))
+    scores, params = zip(*sorted(zip(scores, params), key=order, reverse=True))
+
+    # log some statistics
+    if log:
+        print(f"failed {scores.count(-np.inf)} times")
+        for s, p in zip(scores, params):
+            print(f"score: {s}")
+            print(f"{json.dumps(p, indent=4)}")
 
     best_score = scores[0]
     best_params = params[0]
 
+    # get the best model and retrain on full training set
     model = model_type(**best_params)
     model.fit(X, y)
 
