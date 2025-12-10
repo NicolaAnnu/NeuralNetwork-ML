@@ -3,6 +3,9 @@ matplotlib
 pandas
 scipy
 scikit-learn
+keras
+torch
+tqdm
 ucimlrepo
 ipykernel
 notebook

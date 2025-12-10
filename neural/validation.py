@@ -1,54 +1,71 @@
 from itertools import product
 import numpy as np
-from sklearn.model_selection import KFold
+import multiprocessing as mp
+from tqdm import tqdm
 from neural.network import Classifier, Regressor
+    
+def kfold(n, k):
+      if k <= 0:
+          raise ValueError("error")
+      if k > n:
+          raise ValueError("error")
+      base, extra = divmod(n, k)
+      ranges, start = [], 0
+      for _ in range(k):
+          end = start + base + (1 if 0 < extra else 0)
+          ranges.append((start, end))
+          start = end
+      return ranges
 
+def train_and_score(params, model_type, X, y, k, score_metric):
+      folds = kfold(len(y), k)
+      mask = np.zeros(len(y), dtype=bool)
+      scores = []
+      for start, end in folds:
+          mask[start:end] = True
+          X_val, y_val = X[mask], y[mask]
+          X_train, y_train = X[~mask], y[~mask]
+          try:
+              model = model_type(**params)
+              model.fit(X_train, y_train)
+              preds = model.predict(X_val)
+              scores.append(score_metric(y_val, preds))
+          except Exception:
+              scores.append(-np.inf)
+          mask[start:end] = False
+      return float(np.mean(scores))
+
+def _score_params(args):
+      params, model_type, X, y, k, score_metric = args
+      return train_and_score(params, model_type, X, y, k, score_metric), params
 
 def grid_search(
-    model_type,
-    hyperparams: dict,
-    X: np.ndarray,
-    y: np.ndarray,
-    n_splits: int,
-    score_metric,
-    retrain: bool = False,
-):
-    keys = list(hyperparams.keys())
-    values = list(hyperparams.values())
-    combinations = product(*values)
+      model_type,
+      hyperparams: dict,
+      X: np.ndarray,
+      y: np.ndarray,
+      k: int,
+      score_metric,
+  ) -> tuple[Classifier | Regressor, float]:
+      keys = list(hyperparams.keys())
+      values = list(hyperparams.values())
+      combinations = list(product(*values))
+      params = [{k: v for k, v in zip(keys, comb)} for comb in combinations]
 
-    kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
+      n_cpus = mp.cpu_count()
+      tasks = [(p, model_type, X, y, k, score_metric) for p in params]
 
-    best_score = -np.inf
-    best_params = None
-    best_model = None
+      scores_params = []
+      with mp.Pool(processes=n_cpus) as pool:
+          for score, param in tqdm(
+              pool.imap_unordered(_score_params, tasks),
+              total=len(tasks),
+              desc="grid search",
+              ncols=80,
+          ):
+              scores_params.append((score, param))
 
-    for comb in combinations:
-        params = {k: v for k, v in zip(keys, comb)}
-        fold_scores = []
-
-        # K fold loop
-        for train_idx, val_idx in kf.split(X):
-            X_train, X_val = X[train_idx], X[val_idx]
-            y_train, y_val = y[train_idx], y[val_idx]
-
-            model = model_type(**params)
-            model.fit(X_train, y_train)
-
-            predictions = model.predict(X_val)
-            score = score_metric(y_val, predictions)
-            fold_scores.append(score)
-
-        mean_score = np.mean(fold_scores)
-        print(f"Params: {params} | mean {n_splits}-fold score: {mean_score:.3f}")
-
-        if mean_score > best_score:
-            best_score = mean_score
-            best_params = params
-            best_model = model_type(**params)
-
-    # retrain sul dataset completo (se richiesto)
-    if retrain and best_model is not None:
-        best_model.fit(X, y)
-
-    return best_model, best_params, best_score
+      best_score, best_params = max(scores_params, key=lambda x: x[0])
+      model = model_type(**best_params)
+      model.fit(X, y)
+      return model, best_score
