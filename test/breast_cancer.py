@@ -34,7 +34,6 @@ if __name__ == "__main__":
         y=y_train,
         k=5,
         score_metric=accuracy_score,
-        retrain=False,
     )
     for k in hyperparams.keys():
         print(f"{k}: {net.__dict__[k]}")

@@ -66,7 +66,6 @@ if __name__ == "__main__":
         y=y_train,
         k=5,
         score_metric=neg_mean_squared_error,
-        retrain=True,
     )
     stats(net, score, hyperparams, X_train, X_test, y_train, y_test)
     net1_loss = net.loss_curve.copy()

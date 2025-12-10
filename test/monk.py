@@ -53,14 +53,14 @@ if __name__ == "__main__":
 
     hyperparams = {
         "hidden_layer_sizes": [(3,), (5,)],
-        "activation": ["logistic", "tanh", "relu"],
+        "activation": ["logistic", "tanh"],
         "learning_rate": [0.001, 0.003, 0.01, 0.03],
-        "lam": [0.0, 0.0001],
-        "alpha": [0.0, 0.7],
+        "lam": [0.0, 0.00005, 0.0001],
+        "alpha": [0.0, 0.7, 0.9],
         "tol": [1e-5],
         "batch_size": [8, 16, 32],
         "shuffle": [False, True],
-        "max_iter": [2000],
+        "max_iter": [1000],
     }
 
     net, score = grid_search(
@@ -70,7 +70,6 @@ if __name__ == "__main__":
         y=y_train,
         k=10,
         score_metric=accuracy_score,
-        retrain=False,
     )
     stats(net, score, hyperparams, X_train, X_test, y_train, y_test)
 

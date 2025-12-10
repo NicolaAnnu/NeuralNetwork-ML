@@ -1,8 +1,10 @@
+import multiprocessing as mp
+from functools import partial
 from itertools import product
 
 import numpy as np
 import psutil
-from joblib import Parallel, delayed
+from tqdm import tqdm
 
 from neural.network import Classifier, Regressor
 
@@ -22,7 +24,7 @@ def kfold(n, k):
     return ranges
 
 
-def train_and_score(model_type, params, X, y, k, score_metric):
+def train_and_score(params, model_type, X, y, k, score_metric):
     folds = kfold(X.shape[0], k)
 
     mask = np.array([False for _ in range(len(y))])
@@ -48,7 +50,7 @@ def train_and_score(model_type, params, X, y, k, score_metric):
         scores.append(score)
         mask[start:end] = False
 
-    return model, np.mean(scores)
+    return np.mean(scores)
 
 
 def grid_search(
@@ -58,30 +60,34 @@ def grid_search(
     y: np.ndarray,
     k: int,
     score_metric,
-    retrain: bool = True,
 ) -> tuple[Classifier | Regressor, float]:
     keys = list(hyperparams.keys())
     values = list(hyperparams.values())
     combinations = list(product(*values))
 
+    fn = partial(
+        train_and_score, model_type=model_type, X=X, y=y, k=k, score_metric=score_metric
+    )
+    params = [{k: v for k, v in zip(keys, comb)} for comb in combinations]
+
     # use only physical cores
     n_cpus = psutil.cpu_count(logical=False)
+    with mp.Pool(processes=n_cpus) as pool:
+        scores = []
+        for res in tqdm(
+            pool.imap_unordered(fn, params),
+            total=len(params),
+            desc="grid search",
+            ncols=80,
+        ):
+            scores.append(res)
 
-    results = Parallel(n_jobs=n_cpus)(
-        delayed(train_and_score)(
-            model_type,
-            {k: v for k, v in zip(keys, comb)},
-            X,
-            y,
-            k,
-            score_metric,
-        )
-        for comb in combinations
-    )
+    scores, params = zip(*sorted(zip(scores, params), key=lambda x: x[0], reverse=True))
 
-    best_model, best_score = max(results, key=lambda x: x[1])
+    best_score = scores[0]
+    best_params = params[0]
 
-    if retrain:
-        best_model.fit(X, y)
+    model = model_type(**best_params)
+    model.fit(X, y)
 
-    return best_model, best_score
+    return model, best_score
