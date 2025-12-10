@@ -38,9 +38,9 @@ if __name__ == "__main__":
         "lam": [0.0, 0.0001],
         "alpha": [0.9],
         "tol": [1e-5],
-        "batch_size": [8, 16, 32],
+        "batch_size": [8, 16],
         "shuffle": [False, True],
-        "max_iter": [1000, 2000],
+        "max_iter": [1000],
     }
 
     net, score = grid_search(
@@ -48,7 +48,7 @@ if __name__ == "__main__":
         hyperparams=hyperparams,
         X=X_train,
         y=y_train,
-        k=5,
+        k=10,
         score_metric=accuracy_score,
     )
     # training accuracy

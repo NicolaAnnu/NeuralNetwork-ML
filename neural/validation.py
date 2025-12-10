@@ -18,22 +18,29 @@ def kfold(n, k):
       return ranges
 
 def train_and_score(params, model_type, X, y, k, score_metric):
-      folds = kfold(len(y), k)
-      mask = np.zeros(len(y), dtype=bool)
-      scores = []
-      for start, end in folds:
-          mask[start:end] = True
-          X_val, y_val = X[mask], y[mask]
-          X_train, y_train = X[~mask], y[~mask]
-          try:
-              model = model_type(**params)
-              model.fit(X_train, y_train)
-              preds = model.predict(X_val)
-              scores.append(score_metric(y_val, preds))
-          except Exception:
-              scores.append(-np.inf)
-          mask[start:end] = False
-      return float(np.mean(scores))
+    n = len(y)
+    indices = np.arange(n)
+    np.random.shuffle(indices)
+
+    fold_sizes = np.full(k, n // k, dtype=int)
+    fold_sizes[: n % k] += 1
+
+    current = 0
+    scores = []
+
+    for fold_size in fold_sizes:
+        start, end = current, current + fold_size
+        val_idx = indices[start:end]
+        train_idx = np.concatenate([indices[:start], indices[end:]])
+
+        model = model_type(**params)
+        model.fit(X[train_idx], y[train_idx])
+        preds = model.predict(X[val_idx])
+        scores.append(score_metric(y[val_idx], preds))
+
+        current = end
+
+    return float(np.mean(scores))
 
 def _score_params(args):
       params, model_type, X, y, k, score_metric = args
