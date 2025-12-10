@@ -34,9 +34,9 @@ if __name__ == "__main__":
     hyperparams = {
         "hidden_layer_sizes": [(3,)],
         "activation": ["logistic", "tanh"],
-        "learning_rate": [0.01, 0.03],
+        "learning_rate": [0.01, 0.03, 0.1],
         "lam": [0.0, 0.0001],
-        "alpha": [0.0, 0.9],
+        "alpha": [0.0, 0.5, 0.7, 0.9],
         "tol": [1e-5],
         "batch_size": [8, 16],
         "shuffle": [False, True],
