@@ -107,3 +107,61 @@ def grid_search(
     model.fit(X, y)
 
     return model, best_score
+
+
+def nested_grid_search(
+    model_type,
+    hyperparams: dict,
+    X: np.ndarray,
+    y: np.ndarray,
+    k: int,
+    score_metric,
+    log: bool = True,
+) -> tuple[Classifier | Regressor, float]:
+    hyperparams2 = {}
+    for key in hyperparams.keys():
+        v = hyperparams[key]
+        if isinstance(v[0], float) or isinstance(v[0], int):
+            if len(v) == 1:
+                hyperparams2[key] = v
+            else:
+                hyperparams2[key] = [v[0], v[len(v) // 2]]
+        else:
+            hyperparams2[key] = v
+
+    keys = list(hyperparams2.keys())
+    values = list(hyperparams2.values())
+    combinations = list(product(*values))
+
+    fn = partial(train_and_score, model_type, X, y, k, score_metric)
+    params = [{k: v for k, v in zip(keys, comb)} for comb in combinations]
+
+    # use only physical cores
+    n_cpus = psutil.cpu_count(logical=False)
+    with mp.Pool(processes=n_cpus) as pool:
+        scores = []
+        for res in tqdm(
+            pool.imap_unordered(fn, params),
+            total=len(params),
+            desc="nested grid search",
+            ncols=80,
+        ):
+            scores.append(res)
+
+    scores, params = zip(*sorted(zip(scores, params), key=order, reverse=True))
+
+    hyperparams2 = {}
+    for key in hyperparams.keys():
+        v = hyperparams[key]
+        if isinstance(v[0], float) or isinstance(v[0], int):
+            if len(v) == 1:
+                hyperparams2[key] = v
+            else:
+                if params[0][key] == v[0]:
+                    hyperparams2[key] = v[: len(v) // 2]
+                else:
+                    hyperparams2[key] = v[len(v) // 2 :]
+        else:
+            hyperparams2[key] = v
+
+    return grid_search(model_type, hyperparams2, X, y, k, score_metric, log)

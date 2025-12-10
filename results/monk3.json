@@ -1,0 +1,18 @@
+{
+    "validation_score": 0.9346153846153846,
+    "training_score": 0.9344262295081968,
+    "test_score": 0.9675925925925926,
+    "parameters": {
+        "hidden_layer_sizes": [
+            3
+        ],
+        "activation": "logistic",
+        "learning_rate": 0.01,
+        "lam": 0.0,
+        "alpha": 0.0,
+        "tol": 1e-06,
+        "batch_size": 64,
+        "shuffle": false,
+        "max_iter": 2000
+    }
+}
