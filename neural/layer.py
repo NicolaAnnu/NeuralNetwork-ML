@@ -21,7 +21,7 @@ class Layer:
     def init_weights(self, n: int) -> None:
         if self.activation == activations["relu"]:
             # He initialization
-            self.W = np.random.normal(0, 2 / n, (n, self.units))
+            self.W = np.random.normal(0, np.sqrt(2 / n), (n, self.units))
         else:
             # Glorot-Xavier initialization
             limit = 1 / np.sqrt(n)
