@@ -8,7 +8,7 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 from neural.network import Classifier
 from neural.utils import stats
-from neural.validation import grid_search, nested_grid_search
+from neural.validation import grid_search
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -33,52 +33,15 @@ if __name__ == "__main__":
 
     hyperparams = {
         "hidden_layer_sizes": [(3,)],
-        "activation": ["tanh"],
-        "learning_rate": [0.001, 0.003, 0.01, 0.03, 0.1],
+        "activation": ["logistic", "tanh"],
+        "learning_rate": [0.001, 0.003, 0.01, 0.03, 0.1, 0.3],
         "lam": [0.0, 0.00005, 0.0001],
         "alpha": [0.0, 0.5, 0.7, 0.9],
-        "tol": [1e-6],
-        "batch_size": [8, 16],
+        "tol": [1e-5],
+        "batch_size": [8, 16, 32],
         "shuffle": [False, True],
-        "max_iter": [2000],
+        "max_iter": [1000],
     }
-
-    net, score = nested_grid_search(
-        model_type=Classifier,
-        hyperparams=hyperparams,
-        X=X_train,
-        y=y_train,
-        k=10,
-        score_metric=accuracy_score,
-        log=False,
-    )
-    # training accuracy
-    net_pred = net.predict(X_train)
-    train_score = accuracy_score(y_train, net_pred)
-    print(f"train accuracy: {train_score:.2f}")
-
-    # test accuracy
-    net_pred = net.predict(X_test)
-    test_score = accuracy_score(y_test, net_pred)
-    print(f"test accuracy: {test_score:.2f}")
-
-    # print stats and save results to json file
-    stats(
-        net,
-        hyperparams,
-        score,
-        train_score,
-        test_score,
-        f"results/monk{args.id}.json",
-    )
-
-    plt.title("Loss Curve")
-    plt.plot(net.loss_curve, label="loss")
-    plt.xlabel("Epochs")
-    plt.ylabel("Loss")
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
 
     net, score = grid_search(
         model_type=Classifier,
@@ -87,7 +50,7 @@ if __name__ == "__main__":
         y=y_train,
         k=10,
         score_metric=accuracy_score,
-        log=False,
+        verbose=False,
     )
     # training accuracy
     net_pred = net.predict(X_train)

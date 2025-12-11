@@ -69,7 +69,7 @@ def grid_search(
     y: np.ndarray,
     k: int,
     score_metric,
-    log: bool = True,
+    verbose: bool = False,
 ) -> tuple[Classifier | Regressor, float]:
     keys = list(hyperparams.keys())
     values = list(hyperparams.values())
@@ -93,7 +93,7 @@ def grid_search(
     scores, params = zip(*sorted(zip(scores, params), key=order, reverse=True))
 
     # log some statistics
-    if log:
+    if verbose:
         print(f"failed {scores.count(-np.inf)} times")
         for s, p in zip(scores, params):
             print(f"score: {s}")
@@ -116,52 +116,30 @@ def nested_grid_search(
     y: np.ndarray,
     k: int,
     score_metric,
-    log: bool = True,
+    verbose: bool = False,
 ) -> tuple[Classifier | Regressor, float]:
-    hyperparams2 = {}
-    for key in hyperparams.keys():
-        v = hyperparams[key]
-        if isinstance(v[0], float) or isinstance(v[0], int):
-            if len(v) == 1:
-                hyperparams2[key] = v
-            else:
-                hyperparams2[key] = [v[0], v[len(v) // 2]]
-        else:
-            hyperparams2[key] = v
-
-    keys = list(hyperparams2.keys())
-    values = list(hyperparams2.values())
-    combinations = list(product(*values))
-
-    fn = partial(train_and_score, model_type, X, y, k, score_metric)
-    params = [{k: v for k, v in zip(keys, comb)} for comb in combinations]
-
-    # use only physical cores
-    n_cpus = psutil.cpu_count(logical=False)
-    with mp.Pool(processes=n_cpus) as pool:
-        scores = []
-        for res in tqdm(
-            pool.imap_unordered(fn, params),
-            total=len(params),
-            desc="nested grid search",
-            ncols=80,
-        ):
-            scores.append(res)
-
-    scores, params = zip(*sorted(zip(scores, params), key=order, reverse=True))
+    model, _ = grid_search(model_type, hyperparams, X, y, k, score_metric, verbose)
 
     hyperparams2 = {}
     for key in hyperparams.keys():
-        v = hyperparams[key]
-        if isinstance(v[0], float) or isinstance(v[0], int):
-            if len(v) == 1:
-                hyperparams2[key] = v
-            else:
-                if params[0][key] == v[0]:
-                    hyperparams2[key] = v[: len(v) // 2]
-                else:
-                    hyperparams2[key] = v[len(v) // 2 :]
-        else:
-            hyperparams2[key] = v
+        best_value = model.__dict__[key]
 
-    return grid_search(model_type, hyperparams2, X, y, k, score_metric, log)
+        if len(hyperparams[key]) == 1:
+            hyperparams2[key] = [best_value]
+        elif isinstance(best_value, float):
+            center = best_value
+            width = best_value / 3
+            hyperparams2[key] = np.linspace(
+                center - width, center + width, 4, dtype=float
+            ).tolist()
+        elif isinstance(best_value, int):
+            # center = best_value
+            # width = best_value // 2
+            # hyperparams2[key] = np.linspace(
+            #     center - width, center + width, 3, dtype=int
+            # ).tolist()
+            hyperparams2[key] = [best_value]
+        else:
+            hyperparams2[key] = [best_value]
+
+    return grid_search(model_type, hyperparams2, X, y, k, score_metric, verbose)
