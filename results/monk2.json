@@ -1,18 +1,18 @@
 {
-    "validation_score": 0.9525735294117647,
-    "training_score": 0.9230769230769231,
-    "test_score": 0.8518518518518519,
+    "validation_score": 1.0,
+    "training_score": 1.0,
+    "test_score": 1.0,
     "parameters": {
         "hidden_layer_sizes": [
             3
         ],
-        "activation": "tanh",
-        "learning_rate": 0.05,
-        "lam": 1.0000000000000003e-05,
+        "activation": "logistic",
+        "learning_rate": 0.3,
+        "lam": 0.0001,
         "alpha": 0.0,
         "tol": 1e-05,
         "batch_size": 16,
-        "shuffle": false,
+        "shuffle": true,
         "max_iter": 1000
     }
 }
