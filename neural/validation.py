@@ -5,6 +5,7 @@ from itertools import product
 
 import numpy as np
 import psutil
+from sklearn.preprocessing import StandardScaler
 from tqdm import tqdm
 
 from neural.network import Classifier, Regressor
@@ -25,7 +26,15 @@ def kfold(n, k):
     return ranges
 
 
-def train_and_score(model_type, X, y, k, score_metric, params):
+def train_and_score(
+    model_type,
+    X: np.ndarray,
+    y: np.ndarray,
+    k: int,
+    score_metric,
+    scale: bool,
+    params: dict,
+):
     folds = kfold(X.shape[0], k)
 
     mask = np.array([False for _ in range(len(y))])
@@ -38,6 +47,15 @@ def train_and_score(model_type, X, y, k, score_metric, params):
 
         X_train = X[~mask]
         y_train = y[~mask]
+
+        if scale:
+            X_scaler = StandardScaler()
+            X_train = X_scaler.fit_transform(X_train)
+            X_val = X_scaler.transform(X_val)
+
+            y_scaler = StandardScaler()
+            y_train = y_scaler.fit_transform(y_train)
+            y_val = y_scaler.transform(y_val)
 
         model = model_type(**params)
 
@@ -69,13 +87,14 @@ def grid_search(
     y: np.ndarray,
     k: int,
     score_metric,
+    scale: bool = False,
     verbose: bool = False,
 ) -> tuple[Classifier | Regressor, float]:
     keys = list(hyperparams.keys())
     values = list(hyperparams.values())
     combinations = list(product(*values))
 
-    fn = partial(train_and_score, model_type, X, y, k, score_metric)
+    fn = partial(train_and_score, model_type, X, y, k, score_metric, scale)
     params = [{k: v for k, v in zip(keys, comb)} for comb in combinations]
 
     # use only physical cores
@@ -104,6 +123,12 @@ def grid_search(
 
     # get the best model and retrain on full training set
     model = model_type(**best_params)
+
+    if scale:
+        scaler = StandardScaler()
+        X = scaler.fit_transform(X)
+        y = scaler.fit_transform(y)
+
     model.fit(X, y)
 
     return model, best_score
@@ -116,9 +141,19 @@ def nested_grid_search(
     y: np.ndarray,
     k: int,
     score_metric,
+    scale: bool = False,
     verbose: bool = False,
 ) -> tuple[Classifier | Regressor, float]:
-    model, _ = grid_search(model_type, hyperparams, X, y, k, score_metric, verbose)
+    model, _ = grid_search(
+        model_type,
+        hyperparams,
+        X,
+        y,
+        k,
+        score_metric,
+        scale,
+        verbose,
+    )
 
     hyperparams2 = {}
     for key in hyperparams.keys():
@@ -142,4 +177,4 @@ def nested_grid_search(
         else:
             hyperparams2[key] = [best_value]
 
-    return grid_search(model_type, hyperparams2, X, y, k, score_metric, verbose)
+    return grid_search(model_type, hyperparams2, X, y, k, score_metric, scale, verbose)
