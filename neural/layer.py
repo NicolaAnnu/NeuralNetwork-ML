@@ -46,8 +46,8 @@ class Layer:
         delta_out = delta @ self.W.T
 
         # compute gradients
-        gradient_w = self.out.T @ delta / len(delta)
-        gradient_b = np.sum(delta, axis=0)
+        gradient_w = self.out.T @ delta / delta.shape[0]
+        gradient_b = np.sum(delta, axis=0) / delta.shape[0]
 
         # compute delta w and b for momentum
         delta_w = self.learning_rate * gradient_w
