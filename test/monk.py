@@ -1,10 +1,11 @@
 import argparse
+import json
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from sklearn.metrics import accuracy_score
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.preprocessing import OneHotEncoder
 
 from neural.network import Classifier
 from neural.utils import stats
@@ -13,6 +14,7 @@ from neural.validation import grid_search
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("id", type=int, help="monk dataset ID")
+    parser.add_argument("--gs", action="store_true", help="perform a grid search")
     args = parser.parse_args()
 
     train = pd.read_csv(f"datasets/monks_train{args.id}.csv")
@@ -25,11 +27,7 @@ if __name__ == "__main__":
 
     encoder = OneHotEncoder(sparse_output=False)
     X_train = encoder.fit_transform(X_train)
-    X_test = encoder.transform(X_test)
-
-    scaler = StandardScaler(with_mean=False)
-    X_train = scaler.fit_transform(X_train)
-    X_test = np.asarray(scaler.transform(X_test))
+    X_test = np.asarray(encoder.transform(X_test))
 
     hyperparams = {
         "hidden_layer_sizes": [(3,)],
@@ -37,21 +35,31 @@ if __name__ == "__main__":
         "learning_rate": [0.001, 0.003, 0.01, 0.03, 0.1, 0.3],
         "lam": [0.0, 0.00005, 0.0001],
         "alpha": [0.0, 0.5, 0.7, 0.9],
-        "tol": [1e-5],
-        "batch_size": [8, 16, 32],
+        "tol": [1e-6],
+        "batch_size": [8, 16, 32, 64],
         "shuffle": [False, True],
-        "max_iter": [1000],
+        "max_iter": [2000],
     }
 
-    net, score = grid_search(
-        model_type=Classifier,
-        hyperparams=hyperparams,
-        X=X_train,
-        y=y_train,
-        k=10,
-        score_metric=accuracy_score,
-        verbose=False,
-    )
+    if args.gs:
+        net, score = grid_search(
+            model_type=Classifier,
+            hyperparams=hyperparams,
+            X=X_train,
+            y=y_train,
+            k=10,
+            score_metric=accuracy_score,
+            scale=False,
+            verbose=False,
+        )
+    else:
+        with open(f"results/monk{args.id}.json", "r") as fp:
+            data = json.load(fp)
+            params = data["parameters"]
+        net = Classifier(**params)
+        net.fit(X_train, y_train, X_test, y_test)
+        print(f"loss: {net.loss:.4f}")
+
     # training accuracy
     net_pred = net.predict(X_train)
     train_score = accuracy_score(y_train, net_pred)
@@ -63,17 +71,19 @@ if __name__ == "__main__":
     print(f"test accuracy: {test_score:.2f}")
 
     # print stats and save results to json file
-    stats(
-        net,
-        hyperparams,
-        score,
-        train_score,
-        test_score,
-        f"results/monk{args.id}.json",
-    )
+    if args.gs:
+        stats(
+            net,
+            hyperparams,
+            score,
+            train_score,
+            test_score,
+            f"results/monk{args.id}.json" if args.gs else None,
+        )
 
     plt.title("Loss Curve")
-    plt.plot(net.loss_curve, label="loss")
+    plt.plot(net.loss_curve, label="training")
+    plt.plot(net.val_loss_curve, label="test")
     plt.xlabel("Epochs")
     plt.ylabel("Loss")
     plt.legend()
