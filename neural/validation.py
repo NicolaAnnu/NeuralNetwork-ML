@@ -99,6 +99,8 @@ def grid_search(
 
     # use only physical cores
     n_cpus = psutil.cpu_count(logical=False)
+
+    # run the search in parallel
     with mp.Pool(processes=n_cpus) as pool:
         scores = []
         for res in tqdm(
@@ -113,8 +115,11 @@ def grid_search(
 
     # log some statistics
     if verbose:
+        # print the number of crashed folds
         print(f"failed {scores.count(-np.inf)} times")
-        for s, p in zip(scores, params):
+
+        # print top 3 scores and hyperparameters
+        for s, p in zip(scores[:3], params[:3]):
             print(f"score: {s}")
             print(f"{json.dumps(p, indent=4)}")
 

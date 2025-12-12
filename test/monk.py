@@ -8,7 +8,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import OneHotEncoder
 
 from neural.network import Classifier
-from neural.utils import stats
+from neural.utils import save_stats, stats
 from neural.validation import grid_search
 
 if __name__ == "__main__":
@@ -41,6 +41,7 @@ if __name__ == "__main__":
         "max_iter": [2000],
     }
 
+    # if --gs argument is passed the grid search is performed
     if args.gs:
         net, score = grid_search(
             model_type=Classifier,
@@ -50,36 +51,28 @@ if __name__ == "__main__":
             k=10,
             score_metric=accuracy_score,
             scale=False,
-            verbose=False,
+            verbose=True,
         )
-    else:
+    else:  # otherwise reads parameters from file and perform a single training
         with open(f"results/monk{args.id}.json", "r") as fp:
             data = json.load(fp)
             params = data["parameters"]
+
         net = Classifier(**params)
         net.fit(X_train, y_train, X_test, y_test)
-        print(f"loss: {net.loss:.4f}")
 
     # training accuracy
     net_pred = net.predict(X_train)
     train_score = accuracy_score(y_train, net_pred)
-    print(f"train accuracy: {train_score:.2f}")
 
     # test accuracy
     net_pred = net.predict(X_test)
     test_score = accuracy_score(y_test, net_pred)
-    print(f"test accuracy: {test_score:.2f}")
 
-    # print stats and save results to json file
+    # if --gs passed save results of grid search to a file
+    stats(net, hyperparams, train_score, test_score)
     if args.gs:
-        stats(
-            net,
-            hyperparams,
-            score,
-            train_score,
-            test_score,
-            f"results/monk{args.id}.json" if args.gs else None,
-        )
+        save_stats(net, hyperparams, score, f"results/monk{args.id}.json")
 
     plt.title("Loss Curve")
     plt.plot(net.loss_curve, label="training")

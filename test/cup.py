@@ -1,30 +1,43 @@
+import argparse
+import json
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
 from neural.network import Regressor
+from neural.utils import save_stats, stats
 from neural.validation import grid_search
 
 
-def mean_euclidean_error(y, y_pred):
-    return np.mean(np.linalg.norm(y - y_pred, axis=1))
+def mean_euclidean_error(y_true, y_pred):
+    return np.mean(np.linalg.norm(y_true - y_pred, axis=1))
 
 
-def neg_mean_euclidean_error(y, y_pred):
-    return -np.mean(np.linalg.norm(y - y_pred, axis=1))
+def neg_mean_euclidean_error(y_true, y_pred):
+    return -np.mean(np.linalg.norm(y_true - y_pred, axis=1))
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--gs", action="store_true", help="perform a grid search")
+    args = parser.parse_args()
+
     # set headers
     names = ["ID"]
-    for i in range(12):
-        names.append(f"feature{i}")
+    features = [f"feature{i}" for i in range(12)]
+    targets = [f"target{i}" for i in range(4)]
 
-    for i in range(4):
-        names.append(f"target{i}")
+    names.extend(features)
+    names.extend(targets)
 
-    train = pd.read_csv(f"datasets/ml_cup_train.csv", header=None, names=names)
+    train = pd.read_csv(
+        "datasets/ml_cup_train.csv",
+        header=None,
+        names=names,
+        skiprows=7,
+    )
 
     # get feature and target columns
     X = train.iloc[:, 1:13].to_numpy()
@@ -45,27 +58,29 @@ if __name__ == "__main__":
     y_test = y[threshold:]
 
     hyperparams = {
-        "hidden_layer_sizes": [(32,), (64,)],
-        "activation": ["relu", "tanh"],
-        "learning_rate": [0.001, 0.01],
+        "hidden_layer_sizes": [(64,)],
+        "activation": ["tanh", "relu"],
+        "learning_rate": [0.001, 0.003, 0.01, 0.03],
         "lam": [0.0, 0.0001],
-        "alpha": [0.0, 0.7],
+        "alpha": [0.0, 0.7, 0.9],
         "tol": [1e-5],
-        "batch_size": [16, 32],
+        "batch_size": [64],
         "shuffle": [False],
         "max_iter": [2000],
     }
 
-    net, score = grid_search(
-        model_type=Regressor,
-        hyperparams=hyperparams,
-        X=X_train,
-        y=y_train,
-        k=5,
-        score_metric=neg_mean_euclidean_error,
-        scale=True,
-    )
-    print(f"loss: {net.loss:.4f}")
+    # if --gs argument is passed the grid search is performed
+    if args.gs:
+        net, score = grid_search(
+            model_type=Regressor,
+            hyperparams=hyperparams,
+            X=X_train,
+            y=y_train,
+            k=5,
+            score_metric=neg_mean_euclidean_error,
+            scale=True,
+            verbose=True,
+        )
 
     # normalize train and test set
     X_scaler = StandardScaler()
@@ -76,19 +91,30 @@ if __name__ == "__main__":
     y_train = y_scaler.fit_transform(y_train)
     y_test = np.asarray(y_scaler.transform(y_test))
 
+    if not args.gs:
+        with open(f"results/cup.json", "r") as fp:
+            data = json.load(fp)
+            params = data["parameters"]
+
+            net = Regressor(**params)
+            net.fit(X_train, y_train, X_test, y_test)
+
     # training accuracy
     y_pred = net.predict(X_train)
     y_train = y_scaler.inverse_transform(y_train)
     y_pred = y_scaler.inverse_transform(y_pred)
     train_score = mean_euclidean_error(y_train, y_pred)
-    print(f"train mee: {train_score:.4f}")
 
     # test accuracy
     y_pred = net.predict(X_test)
     y_test = y_scaler.inverse_transform(y_test)
     y_pred = y_scaler.inverse_transform(y_pred)
     test_score = mean_euclidean_error(y_test, y_pred)
-    print(f"test mee: {test_score:.4f}")
+
+    # if --gs passed save results of grid search to a file
+    stats(net, hyperparams, train_score, test_score)
+    if args.gs:
+        save_stats(net, hyperparams, score, "results/cup.json")
 
     plt.title("Loss Curve")
     plt.plot(net.loss_curve, label="training")
