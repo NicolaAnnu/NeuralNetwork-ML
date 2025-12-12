@@ -1,0 +1,14 @@
+{
+    "validation_score": 1.0,
+    "parameters": {
+        "hidden_layer_sizes": [
+            3
+        ],
+        "activation": "tanh",
+        "learning_rate_init": 0.01,
+        "alpha": 0.0,
+        "momentum": 0.0,
+        "batch_size": 8,
+        "shuffle": false
+    }
+}
