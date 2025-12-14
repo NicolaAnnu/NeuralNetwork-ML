@@ -1,4 +1,5 @@
 import numpy as np
+from sklearn.metrics import accuracy_score
 
 from neural.layer import Layer
 
@@ -72,6 +73,9 @@ class Network:
         self.loss_curve = []
         self.val_loss_curve = []
 
+        self.accuracy_curve = []
+        self.val_accuracy_curve = []
+
         best_loss = np.inf
         stop_counter = 0
         for _ in range(self.max_iter):
@@ -87,13 +91,18 @@ class Network:
                 # backpropagation
                 self.backward(2 * error / error.shape[1])
 
-            # epoch loss
+            # epoch loss and accuracy
             out = self.forward(X)
             self.loss_curve.append(np.mean((out - y) ** 2))
+            self.accuracy_curve.append(accuracy_score(y, np.round(out[:, 0])))
 
+            # epoch loss and accuracy on unseen data
             if X_val is not None:
                 out = self.forward(X_val)
                 self.val_loss_curve.append(np.mean((out - y_val) ** 2))
+                self.val_accuracy_curve.append(
+                    accuracy_score(y_val, np.round(out[:, 0]))
+                )
 
             # stopping criteria
             if abs(best_loss - self.loss_curve[-1]) < self.tol:
