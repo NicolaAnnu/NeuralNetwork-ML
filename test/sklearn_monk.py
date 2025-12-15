@@ -9,12 +9,13 @@ from sklearn.model_selection import GridSearchCV, KFold
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import OneHotEncoder
 
-from neural.utils import save_stats
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("id", type=int, help="monk dataset ID")
     parser.add_argument("--gs", action="store_true", help="perform a grid search")
+    parser.add_argument(
+        "--save", action="store_true", help="save grid search results in a file"
+    )
     args = parser.parse_args()
 
     train = pd.read_csv(f"datasets/monks_train{args.id}.csv")
@@ -31,12 +32,13 @@ if __name__ == "__main__":
 
     hyperparams = {
         "hidden_layer_sizes": [(3,)],
-        "activation": ["tanh"],
-        "learning_rate_init": [0.001, 0.003, 0.01],
+        "activation": ["logistic", "tanh"],
+        "learning_rate_init": [0.001, 0.003, 0.01, 0.03, 0.1, 0.3],
         "alpha": [0.0, 0.0001],
-        "momentum": [0.0, 0.7],
-        "batch_size": [8, 16],
+        "momentum": [0.0, 0.7, 0.9],
+        "batch_size": [8, 16, 32],
         "shuffle": [False, True],
+        "max_iter": [2000],
     }
 
     # if --gs argument is passed the grid search is performed
@@ -77,7 +79,7 @@ if __name__ == "__main__":
 
     # if --gs passed save results of grid search to a file
     if args.gs:
-        save_stats(net, hyperparams, score, f"results/sklearn_monk{args.id}.json")
+        save(net, hyperparams, score, f"results/sklearn_monk{args.id}.json")
 
     plt.title("Loss Curve")
     plt.plot(net.loss_curve_, label="training")
