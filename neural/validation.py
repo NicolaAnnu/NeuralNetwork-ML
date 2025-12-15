@@ -1,5 +1,5 @@
-import json
 import multiprocessing as mp
+import time
 from functools import partial
 from itertools import product
 
@@ -7,8 +7,6 @@ import numpy as np
 import psutil
 from sklearn.preprocessing import StandardScaler
 from tqdm import tqdm
-
-from neural.network import Classifier, Regressor
 
 
 def kfold(n, k):
@@ -34,7 +32,7 @@ def train_and_score(
     score_metric,
     scale: bool,
     params: dict,
-):
+) -> dict:
     folds = kfold(X.shape[0], k)
 
     mask = np.array([False for _ in range(len(y))])
@@ -69,11 +67,11 @@ def train_and_score(
         scores.append(score)
         mask[start:end] = False
 
-    return np.mean(scores)
+    return {"score": float(np.mean(scores)), "parameters": params}
 
 
-def order(x: tuple):
-    score, params = x
+def order(x: dict):
+    score, params = x["score"], x["parameters"]
     hls = params["hidden_layer_sizes"]
     lam = params["lam"]
 
@@ -89,10 +87,15 @@ def grid_search(
     score_metric,
     scale: bool = False,
     verbose: bool = False,
-) -> tuple[Classifier | Regressor, float]:
+) -> list[dict]:
     keys = list(hyperparams.keys())
     values = list(hyperparams.values())
     combinations = list(product(*values))
+
+    if verbose:
+        print(
+            f"{len(combinations)} combinations and {k} folds: {len(combinations) * k} total training"
+        )
 
     fn = partial(train_and_score, model_type, X, y, k, score_metric, scale)
     params = [{k: v for k, v in zip(keys, comb)} for comb in combinations]
@@ -101,85 +104,70 @@ def grid_search(
     n_cpus = psutil.cpu_count(logical=False)
 
     # run the search in parallel
+    start = time.perf_counter()
     with mp.Pool(processes=n_cpus) as pool:
-        scores = []
+        results = []
         for res in tqdm(
             pool.imap_unordered(fn, params),
             total=len(params),
             desc="grid search",
             ncols=80,
         ):
-            scores.append(res)
+            results.append(res)
 
-    scores, params = zip(*sorted(zip(scores, params), key=order, reverse=True))
+    end = time.perf_counter()
+
+    results = sorted(results, key=order, reverse=True)
 
     # log some statistics
     if verbose:
-        # print the number of crashed folds
-        print(f"failed {scores.count(-np.inf)} times")
+        print(f"failed {results.count(-np.inf)} times")
+        print(f"duration: {end - start:.2f} seconds")
 
-        # print top 3 scores and hyperparameters
-        for s, p in zip(scores[:3], params[:3]):
-            print(f"score: {s}")
-            print(f"{json.dumps(p, indent=4)}")
-
-    best_score = scores[0]
-    best_params = params[0]
-
-    # get the best model and retrain on full training set
-    model = model_type(**best_params)
-
-    if scale:
-        scaler = StandardScaler()
-        X = scaler.fit_transform(X)
-        y = scaler.fit_transform(y)
-
-    model.fit(X, y)
-
-    return model, best_score
+    return results
 
 
-def nested_grid_search(
-    model_type,
-    hyperparams: dict,
-    X: np.ndarray,
-    y: np.ndarray,
-    k: int,
-    score_metric,
-    scale: bool = False,
-    verbose: bool = False,
-) -> tuple[Classifier | Regressor, float]:
-    model, _ = grid_search(
-        model_type,
-        hyperparams,
-        X,
-        y,
-        k,
-        score_metric,
-        scale,
-        verbose,
-    )
-
-    hyperparams2 = {}
-    for key in hyperparams.keys():
-        best_value = model.__dict__[key]
-
-        if len(hyperparams[key]) == 1:
-            hyperparams2[key] = [best_value]
-        elif isinstance(best_value, float):
-            center = best_value
-            width = best_value / 3
-            hyperparams2[key] = np.linspace(
-                center - width, center + width, 4, dtype=float
-            ).tolist()
-        elif isinstance(best_value, int):
-            # center = best_value
-            # width = best_value // 2
-            # hyperparams2[key] = np.linspace(
-            #     center - width, center + width, 3, dtype=int
-            # ).tolist()
-            hyperparams2[key] = [best_value]
-        else:
-            hyperparams2[key] = [best_value]
-
-    return grid_search(model_type, hyperparams2, X, y, k, score_metric, scale, verbose)
+# def nested_grid_search(
+#     model_type,
+#     hyperparams: dict,
+#     X: np.ndarray,
+#     y: np.ndarray,
+#     k: int,
+#     score_metric,
+#     scale: bool = False,
+#     verbose: bool = False,
+# ) -> tuple[Classifier | Regressor, float]:
+#     model, _ = grid_search(
+#         model_type,
+#         hyperparams,
+#         X,
+#         y,
+#         k,
+#         score_metric,
+#         scale,
+#         verbose,
+#     )
+#
+#     hyperparams2 = {}
+#     for key in hyperparams.keys():
+#         best_value = model.__dict__[key]
+#
+#         if len(hyperparams[key]) == 1:
+#             hyperparams2[key] = [best_value]
+#         elif isinstance(best_value, float):
+#             center = best_value
+#             width = best_value / 3
+#             hyperparams2[key] = np.linspace(
+#                 center - width, center + width, 4, dtype=float
+#             ).tolist()
+#         elif isinstance(best_value, int):
+#             # center = best_value
+#             # width = best_value // 2
+#             # hyperparams2[key] = np.linspace(
+#             #     center - width, center + width, 3, dtype=int
+#             # ).tolist()
+#             hyperparams2[key] = [best_value]
+#         else:
+#             hyperparams2[key] = [best_value]
+#
+#     return grid_search(model_type, hyperparams2, X, y, k, score_metric, scale, verbose)
