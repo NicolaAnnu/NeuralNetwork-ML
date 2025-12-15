@@ -7,7 +7,6 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
 from neural.network import Regressor
-from neural.utils import save_stats, stats
 from neural.validation import grid_search
 
 
@@ -22,13 +21,15 @@ def neg_mean_euclidean_error(y_true, y_pred):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--gs", action="store_true", help="perform a grid search")
+    parser.add_argument(
+        "--save", action="store_true", help="save grid search results in a file"
+    )
     args = parser.parse_args()
 
     # set headers
     names = ["ID"]
     features = [f"feature{i}" for i in range(12)]
     targets = [f"target{i}" for i in range(4)]
-
     names.extend(features)
     names.extend(targets)
 
@@ -57,21 +58,21 @@ if __name__ == "__main__":
     X_test = X[threshold:]
     y_test = y[threshold:]
 
-    hyperparams = {
-        "hidden_layer_sizes": [(64,)],
-        "activation": ["tanh", "relu"],
-        "learning_rate": [0.001, 0.003, 0.01, 0.03],
-        "lam": [0.0, 0.0001],
-        "alpha": [0.0, 0.7, 0.9],
-        "tol": [1e-5],
-        "batch_size": [64],
-        "shuffle": [False],
-        "max_iter": [2000],
-    }
-
     # if --gs argument is passed the grid search is performed
     if args.gs:
-        net, score = grid_search(
+        hyperparams = {
+            "hidden_layer_sizes": [(64,)],
+            "activation": ["tanh", "relu"],
+            "learning_rate": [0.001, 0.003, 0.01, 0.03],
+            "lam": [0.0, 0.0001],
+            "alpha": [0.0, 0.7, 0.9],
+            "tol": [1e-5],
+            "batch_size": [64],
+            "shuffle": [False],
+            "max_iter": [2000],
+        }
+
+        results = grid_search(
             model_type=Regressor,
             hyperparams=hyperparams,
             X=X_train,
@@ -82,6 +83,21 @@ if __name__ == "__main__":
             verbose=True,
         )
 
+        # save results to a json file
+        if args.save:
+            with open(f"results/cup.json", "w") as fp:
+                json.dump(results, fp, indent=2)
+
+    with open(f"results/cup.json", "r") as fp:
+        results = json.load(fp)
+
+    best = results[0]
+    print(json.dumps(best["parameters"], indent=2))
+    print(f"best grid search score: {best['score']:.2f}")
+
+    params = best["parameters"]
+    net = Regressor(**params)
+
     # normalize train and test set
     X_scaler = StandardScaler()
     X_train = X_scaler.fit_transform(X_train)
@@ -91,13 +107,8 @@ if __name__ == "__main__":
     y_train = y_scaler.fit_transform(y_train)
     y_test = np.asarray(y_scaler.transform(y_test))
 
-    if not args.gs:
-        with open(f"results/cup.json", "r") as fp:
-            data = json.load(fp)
-            params = data["parameters"]
-
-            net = Regressor(**params)
-            net.fit(X_train, y_train, X_test, y_test)
+    # train the model
+    net.fit(X_train, y_train, X_test, y_test)
 
     # training accuracy
     y_pred = net.predict(X_train)
@@ -110,11 +121,6 @@ if __name__ == "__main__":
     y_test = y_scaler.inverse_transform(y_test)
     y_pred = y_scaler.inverse_transform(y_pred)
     test_score = mean_euclidean_error(y_test, y_pred)
-
-    # if --gs passed save results of grid search to a file
-    stats(net, hyperparams, train_score, test_score)
-    if args.gs:
-        save_stats(net, hyperparams, score, "results/cup.json")
 
     plt.title("Loss Curve")
     plt.plot(net.loss_curve, label="training")
