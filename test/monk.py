@@ -60,8 +60,9 @@ if __name__ == "__main__":
             with open(f"results/monk{args.id}.json", "w") as fp:
                 json.dump(results, fp, indent=2)
 
-    with open(f"results/monk{args.id}.json", "r") as fp:
-        results = json.load(fp)
+    else:  # get params from last saved grid search
+        with open(f"results/monk{args.id}.json", "r") as fp:
+            results = json.load(fp)
 
     best = results[0]
     print(json.dumps(best["parameters"], indent=2))
