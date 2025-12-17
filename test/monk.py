@@ -93,12 +93,3 @@ if __name__ == "__main__":
     plt.legend()
     plt.tight_layout()
     plt.show()
-
-    plt.title("Accuracy Curve")
-    plt.plot(net.accuracy_curve, label="training")
-    plt.plot(net.val_accuracy_curve, label="test")
-    plt.xlabel("Epochs")
-    plt.ylabel("Accuracy")
-    plt.legend()
-    plt.tight_layout()
-    plt.show()

@@ -61,15 +61,15 @@ if __name__ == "__main__":
     # if --gs argument is passed the grid search is performed
     if args.gs:
         hyperparams = {
-            "hidden_layer_sizes": [(64,)],
-            "activation": ["tanh", "relu"],
-            "learning_rate": [0.001, 0.003, 0.01, 0.03],
+            "hidden_layer_sizes": [(32,), (64,)],
+            "activation": ["logistic", "tanh", "relu"],
+            "learning_rate": [0.001, 0.003, 0.01, 0.03, 0.1, 0.3],
             "lam": [0.0, 0.0001],
             "alpha": [0.0, 0.7, 0.9],
             "tol": [1e-5],
-            "batch_size": [64],
-            "shuffle": [False],
-            "max_iter": [2000],
+            "batch_size": [32, 64],
+            "shuffle": [False, True],
+            "max_iter": [5000],
         }
 
         results = grid_search(
@@ -85,10 +85,10 @@ if __name__ == "__main__":
 
         # save results to a json file
         if args.save:
-            with open(f"results/cup.json", "w") as fp:
+            with open("results/cup.json", "w") as fp:
                 json.dump(results, fp, indent=2)
 
-    with open(f"results/cup.json", "r") as fp:
+    with open("results/cup.json", "r") as fp:
         results = json.load(fp)
 
     best = results[0]
