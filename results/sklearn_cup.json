@@ -1,0 +1,17 @@
+{
+    "cv_rmse": 12.245425622945142,
+    "train_rmse": 5.871992626628031,
+    "parameters": {
+        "model__activation": "tanh",
+        "model__alpha": 0.0001,
+        "model__batch_size": 64,
+        "model__hidden_layer_sizes": [
+            64
+        ],
+        "model__learning_rate_init": 0.001,
+        "model__max_iter": 1000,
+        "model__momentum": 0.9,
+        "model__n_iter_no_change": 200,
+        "model__tol": 1e-05
+    }
+}

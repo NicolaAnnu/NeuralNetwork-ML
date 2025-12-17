@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from sklearn.metrics import accuracy_score
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.preprocessing import OneHotEncoder
 
 from neural.network import Classifier
 from neural.utils import stats
@@ -27,10 +27,6 @@ if __name__ == "__main__":
     X_train = encoder.fit_transform(X_train)
     X_test = encoder.transform(X_test)
 
-    scaler = StandardScaler(with_mean=False)
-    X_train = scaler.fit_transform(X_train)
-    X_test = np.asarray(scaler.transform(X_test))
-
     hyperparams = {
         "hidden_layer_sizes": [(3,)],
         "activation": ["logistic", "tanh"],
@@ -38,7 +34,7 @@ if __name__ == "__main__":
         "lam": [0.0, 0.0001],
         "alpha": [0.9],
         "tol": [1e-5],
-        "batch_size": [8, 16],
+        "batch_size": [8, 16, 32, 64],
         "shuffle": [False, True],
         "max_iter": [1000],
     }
@@ -50,6 +46,7 @@ if __name__ == "__main__":
         y=y_train,
         k=10,
         score_metric=accuracy_score,
+        verbose = False,
     )
     # training accuracy
     net_pred = net.predict(X_train)
