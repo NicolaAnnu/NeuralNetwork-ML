@@ -34,13 +34,13 @@ if __name__ == "__main__":
     if args.gs:
         hyperparams = {
             "hidden_layer_sizes": [(3,)],
-            "activation": ["tanh"],
-            "learning_rate": [0.001, 0.003, 0.01],
-            "lam": [0.0, 0.0001],
-            "alpha": [0.0, 0.7],
+            "activation": ["logistic", "tanh"],
+            "learning_rate": [0.001, 0.003, 0.01, 0.03, 0.1, 0.3],
+            "lam": [0.0, 0.00005, 0.0001],
+            "alpha": [0.0, 0.5, 0.7, 0.9],
             "tol": [1e-6],
-            "batch_size": [8, 16],
-            "shuffle": [False],
+            "batch_size": [8, 16, 32, 64],
+            "shuffle": [False, True],
             "max_iter": [2000],
         }
 
@@ -49,10 +49,10 @@ if __name__ == "__main__":
             hyperparams=hyperparams,
             X=X_train,
             y=y_train,
-            k=5,
+            k=10,
             score_metric=accuracy_score,
             scale=False,
-            # address="tcp://192.168.1.95:8786",
+            address="tcp://192.168.1.95:8786",
             verbose=True,
         )
 

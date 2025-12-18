@@ -61,13 +61,13 @@ if __name__ == "__main__":
     # if --gs argument is passed the grid search is performed
     if args.gs:
         hyperparams = {
-            "hidden_layer_sizes": [(32,), (64,)],
+            "hidden_layer_sizes": [(32,), (64,), (32, 32)],
             "activation": ["logistic", "tanh", "relu"],
             "learning_rate": [0.001, 0.003, 0.01, 0.03, 0.1, 0.3],
-            "lam": [0.0, 0.0001],
-            "alpha": [0.0, 0.7, 0.9],
-            "tol": [1e-5],
-            "batch_size": [32, 64],
+            "lam": [0.0, 0.00005, 0.0001],
+            "alpha": [0.0, 0.5, 0.7, 0.9],
+            "tol": [1e-5, 1e-6],
+            "batch_size": [16, 32, 64],
             "shuffle": [False, True],
             "max_iter": [5000],
         }
@@ -77,9 +77,10 @@ if __name__ == "__main__":
             hyperparams=hyperparams,
             X=X_train,
             y=y_train,
-            k=5,
+            k=10,
             score_metric=neg_mean_euclidean_error,
             scale=True,
+            address="tcp://192.168.1.95:8786",
             verbose=True,
         )
 
