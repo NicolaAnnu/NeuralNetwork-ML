@@ -1,4 +1,6 @@
 numpy
+dask
+dask[distributed]
 matplotlib
 pandas
 scipy

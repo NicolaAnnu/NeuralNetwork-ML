@@ -1,12 +1,10 @@
-import multiprocessing as mp
 import time
-from functools import partial
 from itertools import product
 
 import numpy as np
-import psutil
+from dask.delayed import delayed
+from dask.distributed import Client, progress
 from sklearn.preprocessing import StandardScaler
-from tqdm import tqdm
 
 
 def kfold(n, k):
@@ -86,42 +84,45 @@ def grid_search(
     k: int,
     score_metric,
     scale: bool = False,
+    address: None | str = None,
     verbose: bool = False,
 ) -> list[dict]:
+    # dask init
+    if address:
+        client = Client(address)
+    else:
+        client = Client()
+
+    if verbose:
+        print(f"dask dashboard: {client.dashboard_link}")
+
     keys = list(hyperparams.keys())
     values = list(hyperparams.values())
     combinations = list(product(*values))
 
     if verbose:
-        print(
-            f"{len(combinations)} combinations and {k} folds: {len(combinations) * k} total training"
-        )
+        print(f"{len(combinations) * k} total training")
 
-    fn = partial(train_and_score, model_type, X, y, k, score_metric, scale)
-    params = [{k: v for k, v in zip(keys, comb)} for comb in combinations]
+    params_list = [{k: v for k, v in zip(keys, comb)} for comb in combinations]
+    tasks = [
+        delayed(train_and_score)(model_type, X, y, k, score_metric, scale, params)
+        for params in params_list
+    ]
 
-    # use only physical cores
-    n_cpus = psutil.cpu_count(logical=False)
-
-    # run the search in parallel
     start = time.perf_counter()
-    with mp.Pool(processes=n_cpus) as pool:
-        results = []
-        for res in tqdm(
-            pool.imap_unordered(fn, params),
-            total=len(params),
-            desc="grid search",
-            ncols=80,
-        ):
-            results.append(res)
+    futures = client.compute(tasks)
+    if verbose:
+        progress(futures)
 
+    results = client.gather(futures)
     end = time.perf_counter()
 
     results = sorted(results, key=order, reverse=True)
 
     # log some statistics
     if verbose:
-        print(f"failed {results.count(-np.inf)} times")
+        failed = sum(r["score"] == -np.inf for r in results)
+        print(f"failed {failed} times")
         print(f"duration: {end - start:.2f} seconds")
 
     return results
