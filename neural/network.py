@@ -11,10 +11,10 @@ class Network:
         learning_rate: float = 0.1,
         lam: float = 0.0001,  # regularization
         alpha: float = 0.5,  # momentum
-        tol: float = 1e-4,
-        batch_size: int = 10,
-        shuffle: bool = False,
-        max_iter: int = 200,
+        tol: float = 1e-4, # tolerance for stopping criteria
+        batch_size: int = 10, # size of mini-batches
+        shuffle: bool = False, # whether to shuffle samples at each epoch
+        max_iter: int = 200, # maximum number of iterations
     ) -> None:
         self.hidden_layer_sizes = hidden_layer_sizes
         self.layers = [
@@ -27,6 +27,7 @@ class Network:
             )
             for units in hidden_layer_sizes
         ]
+        #here we created the list of the hidden layers
 
         self.activation = activation
         self.learning_rate = learning_rate
@@ -38,9 +39,9 @@ class Network:
         self.max_iter = max_iter
 
     def init_weights(self, input_size):
-        for layer in self.layers:
+        for layer in self.layers: 
             layer.init_weights(input_size)
-            input_size = layer.units
+            input_size = layer.units # update input size for the next layer
 
     def forward(self, X: np.ndarray) -> np.ndarray:
         for layer in self.layers:

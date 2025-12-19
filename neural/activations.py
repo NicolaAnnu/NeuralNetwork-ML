@@ -20,7 +20,8 @@ def relu(x):
 
 
 def relu_d(x):
-    return (x > 0).astype(float)
+    return (x > 0).astype(float)  # (x > 0) return 1 else 0, astype convert numpy bolean to float
+
 
 
 # dictionary of activation functions
@@ -34,3 +35,4 @@ activations = {
     "tanh": (np.tanh, tanh_d),
     "relu": (relu, relu_d),
 }
+

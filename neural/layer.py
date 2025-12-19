@@ -13,19 +13,22 @@ class Layer:
         alpha: float = 0.5,
     ) -> None:
         self.units = units
-        self.activation = activations[activation]
+        self.activation = activations[activation]  
+        #activation is a dictionary, for this reason we use activations[activation].
+        #now self.activation is a function (activation function, derivative)
         self.learning_rate = learning_rate
-        self.lam = lam
-        self.alpha = alpha
+        self.lam = lam # regularization parameter
+        self.alpha = alpha # momentum parameter
 
     def init_weights(self, n: int) -> None:
-        if self.activation == activations["relu"]:
+        if self.activation == activations["relu"]:  
             # He initialization
-            self.W = np.random.normal(0, 2 / n, (n, self.units))
+            self.W = np.random.normal(0, np.sqrt(2 / n), (n, self.units))# mean, std, shape
         else:
             # Glorot-Xavier initialization
             limit = 1 / np.sqrt(n)
-            self.W = np.random.uniform(-limit, limit, (n, self.units))
+            self.W = np.random.uniform(-limit, limit, (n, self.units)) # low, high, shape
+            #variance approx 1/n
 
         self.b = np.zeros(self.units)
 
@@ -54,8 +57,7 @@ class Layer:
         delta_b = self.learning_rate * gradient_b
 
         # regularization term
-        penalty = 2 * self.lam * self.W
-
+        penalty = 2 * self.lam * self.W   # L2 regularization
         # momentum terms
         momentum_w = self.alpha * self.old_delta_w
         momentum_b = self.alpha * self.old_delta_b
