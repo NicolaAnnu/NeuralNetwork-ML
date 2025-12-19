@@ -60,12 +60,12 @@ def train_and_score(
             predictions = model.predict(X_val)
             score = score_metric(y_val, predictions)
         except Exception:
-            score = -np.inf
+            return {"score": float(-np.inf), "parameters": params}
 
         scores.append(score)
         mask[start:end] = False
 
-    return {"score": float(np.mean(scores)), "parameters": params}
+    return {"score": float(np.mean(scores) - np.std(scores)), "parameters": params}
 
 
 def order(x: dict):
@@ -109,16 +109,21 @@ def grid_search(
         for params in params_list
     ]
 
-    start = time.perf_counter()
-    futures = client.compute(tasks)
-    if verbose:
-        progress(futures)
+    try:
+        start = time.perf_counter()
+        futures = client.compute(tasks)
+        if verbose:
+            progress(futures)
 
-    results = client.gather(futures)
-    end = time.perf_counter()
+        results = client.gather(futures)
+        end = time.perf_counter()
+    except KeyboardInterrupt:
+        print("keybaord interrupt")
+        client.cancel(futures, force=True)
+    finally:
+        client.close()
 
     results = sorted(results, key=order, reverse=True)
-
     # log some statistics
     if verbose:
         failed = sum(r["score"] == -np.inf for r in results)

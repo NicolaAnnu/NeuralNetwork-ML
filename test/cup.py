@@ -61,15 +61,15 @@ if __name__ == "__main__":
     # if --gs argument is passed the grid search is performed
     if args.gs:
         hyperparams = {
-            "hidden_layer_sizes": [(32,), (64,), (32, 32)],
-            "activation": ["logistic", "tanh", "relu"],
-            "learning_rate": [0.001, 0.003, 0.01, 0.03, 0.1, 0.3],
+            "hidden_layer_sizes": [(32, 32), (64, 64), (128, 128)],
+            "activation": ["relu"],
+            "learning_rate": [0.01, 0.03, 0.05],
             "lam": [0.0, 0.00005, 0.0001],
-            "alpha": [0.0, 0.5, 0.7, 0.9],
-            "tol": [1e-5, 1e-6],
-            "batch_size": [16, 32, 64],
+            "alpha": [0.0, 0.7, 0.9],
+            "tol": [1e-5],
+            "batch_size": [32, 64],
             "shuffle": [False, True],
-            "max_iter": [5000],
+            "max_iter": [3000],
         }
 
         results = grid_search(
@@ -111,17 +111,27 @@ if __name__ == "__main__":
     # train the model
     net.fit(X_train, y_train, X_test, y_test)
 
+    print(f"converged in {len(net.loss_curve)} epochs")
+    print(f"loss: {net.loss:.3f}")
+
     # training accuracy
     y_pred = net.predict(X_train)
-    y_train = y_scaler.inverse_transform(y_train)
-    y_pred = y_scaler.inverse_transform(y_pred)
+    # y_train = y_scaler.inverse_transform(y_train)
+    # y_pred = y_scaler.inverse_transform(y_pred)
     train_score = mean_euclidean_error(y_train, y_pred)
+    print(f"train MEE: {train_score:.3f}")
 
     # test accuracy
     y_pred = net.predict(X_test)
-    y_test = y_scaler.inverse_transform(y_test)
-    y_pred = y_scaler.inverse_transform(y_pred)
+    # y_test = y_scaler.inverse_transform(y_test)
+    # y_pred = y_scaler.inverse_transform(y_pred)
     test_score = mean_euclidean_error(y_test, y_pred)
+    print(f"test MEE: {test_score:.3f}")
+
+    denom = np.max(y_test) - np.min(y_test)
+    print(f"y_max - y_min: {denom:.2f}")
+
+    print(f"{test_score / denom:.2f}")
 
     plt.title("Loss Curve")
     plt.plot(net.loss_curve, label="training")
