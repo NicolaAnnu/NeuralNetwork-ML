@@ -1,10 +1,16 @@
+from copy import deepcopy
+
 import numpy as np
 import pandas as pd
-from copy import deepcopy
+
+
+def mean_euclidean_error(y_true, y_pred):
+    return np.mean(np.linalg.norm(y_true - y_pred, axis=1))
 
 
 class Metrics:
     accuracy_results = np.array([])
+
     def __init__(self, metrics=None):
         self.metrics = deepcopy(metrics or [])
         self.reset()
@@ -19,7 +25,6 @@ class Metrics:
     def compute_results(self, oracle: np.ndarray, out: np.ndarray) -> None:
         if not ("accuracy" in self.metrics or "accuracy_score" in self.metrics):
             return
-
 
         labels = np.unique(np.concatenate([oracle, out]))
         num_classes = len(labels)
@@ -39,7 +44,9 @@ class Metrics:
         else:
             for idx, label in enumerate(labels):
                 self.true_pos += cm.loc[label, label]
-                self.true_neg += np.sum(np.delete(np.delete(cm.values, idx, axis=0), idx, axis=1))
+                self.true_neg += np.sum(
+                    np.delete(np.delete(cm.values, idx, axis=0), idx, axis=1)
+                )
                 self.false_pos += np.sum(cm.loc[:, label]) - cm.loc[label, label]
                 self.false_neg += np.sum(cm.loc[label, :]) - cm.loc[label, label]
 
@@ -53,7 +60,9 @@ class Metrics:
         return res
 
     def get_best_accuracy(self) -> float:
-        return float(np.max(self.accuracy_results)) if len(self.accuracy_results) else 0.0
+        return (
+            float(np.max(self.accuracy_results)) if len(self.accuracy_results) else 0.0
+        )
 
     def precision(self) -> float:
         denom = self.true_pos + self.false_pos

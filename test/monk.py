@@ -55,7 +55,7 @@ if __name__ == "__main__":
             X=X_train,
             y=y_train,
             k=10,
-            score_metric=accuracy_score,
+            metric="accuracy",
             scale=False,
             address="tcp://192.168.1.95:8786",
             verbose=True,

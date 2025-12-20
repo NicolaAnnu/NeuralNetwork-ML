@@ -33,7 +33,7 @@ if __name__ == "__main__":
         X=X_train,
         y=y_train,
         k=5,
-        score_metric=accuracy_score,
+        metric=accuracy_score,
     )
     for k in hyperparams.keys():
         print(f"{k}: {net.__dict__[k]}")

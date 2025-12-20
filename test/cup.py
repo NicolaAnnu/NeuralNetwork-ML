@@ -6,23 +6,16 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
+from neural.metrics import mean_euclidean_error
 from neural.network import Regressor
 from neural.validation import grid_search
-
-
-def mean_euclidean_error(y_true, y_pred):
-    return np.mean(np.linalg.norm(y_true - y_pred, axis=1))
-
-
-def neg_mean_euclidean_error(y_true, y_pred):
-    return -np.mean(np.linalg.norm(y_true - y_pred, axis=1))
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--gs", action="store_true", help="perform a grid search")
+    parser.add_argument("--save", action="store_true", help="save results in a file")
     parser.add_argument(
-        "--save", action="store_true", help="save grid search results in a file"
+        "--dask", type=str, default=None, help="perform a distributed grid search"
     )
     args = parser.parse_args()
 
@@ -60,15 +53,27 @@ if __name__ == "__main__":
 
     # if --gs argument is passed the grid search is performed
     if args.gs:
+        # hyperparams = {
+        #     "hidden_layer_sizes": [(32, 32), (64, 64), (128, 128)],
+        #     "activation": ["relu"],
+        #     "learning_rate": [0.01, 0.03, 0.05],
+        #     "lam": [0.0, 0.00005, 0.0001],
+        #     "alpha": [0.0, 0.7, 0.9],
+        #     "tol": [1e-5],
+        #     "batch_size": [32, 64],
+        #     "shuffle": [False, True],
+        #     "max_iter": [3000],
+        # }
+
         hyperparams = {
-            "hidden_layer_sizes": [(32, 32), (64, 64), (128, 128)],
-            "activation": ["relu"],
-            "learning_rate": [0.01, 0.03, 0.05],
-            "lam": [0.0, 0.00005, 0.0001],
-            "alpha": [0.0, 0.7, 0.9],
+            "hidden_layer_sizes": [(32,)],
+            "activation": ["tanh"],
+            "learning_rate": [0.03],
+            "lam": [0.0, 0.0001],
+            "alpha": [0.0, 0.9],
             "tol": [1e-5],
             "batch_size": [32, 64],
-            "shuffle": [False, True],
+            "shuffle": [False],
             "max_iter": [3000],
         }
 
@@ -77,10 +82,10 @@ if __name__ == "__main__":
             hyperparams=hyperparams,
             X=X_train,
             y=y_train,
-            k=10,
-            score_metric=neg_mean_euclidean_error,
+            k=5,
+            metric="mee",
             scale=True,
-            address="tcp://192.168.1.95:8786",
+            address=args.dask,
             verbose=True,
         )
 

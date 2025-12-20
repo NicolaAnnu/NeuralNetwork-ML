@@ -4,7 +4,10 @@ from itertools import product
 import numpy as np
 from dask.delayed import delayed
 from dask.distributed import Client, progress
+from sklearn.metrics import accuracy_score, f1_score, mean_squared_error
 from sklearn.preprocessing import StandardScaler
+
+from neural.metrics import mean_euclidean_error
 
 
 def kfold(n, k):
@@ -27,7 +30,7 @@ def train_and_score(
     X: np.ndarray,
     y: np.ndarray,
     k: int,
-    score_metric,
+    metric,
     scale: bool,
     params: dict,
 ) -> dict:
@@ -58,7 +61,7 @@ def train_and_score(
         try:
             model.fit(X_train, y_train)
             predictions = model.predict(X_val)
-            score = score_metric(y_val, predictions)
+            score = metric(y_val, predictions)
         except Exception:
             return {"score": float(-np.inf), "parameters": params}
 
@@ -68,12 +71,30 @@ def train_and_score(
     return {"score": float(np.mean(scores) - np.std(scores)), "parameters": params}
 
 
-def order(x: dict):
+# used for accuracy or f1
+def max_order(x: dict):
+    score, params = x["score"], x["parameters"]
+    hls = params["hidden_layer_sizes"]
+    lam = params["lam"]
+
+    return (-score, len(hls), sum(hls), -lam)
+
+
+# used for MSE or MEE
+def min_order(x: dict):
     score, params = x["score"], x["parameters"]
     hls = params["hidden_layer_sizes"]
     lam = params["lam"]
 
     return (score, -len(hls), -sum(hls), lam)
+
+
+metrics = {
+    "accuracy": {"func": accuracy_score, "reverse": True},
+    "f1": {"func": f1_score, "reverse": True},
+    "mse": {"func": mean_squared_error, "reverse": False},
+    "mee": {"func": mean_euclidean_error, "reverse": False},
+}
 
 
 def grid_search(
@@ -82,7 +103,7 @@ def grid_search(
     X: np.ndarray,
     y: np.ndarray,
     k: int,
-    score_metric,
+    metric: str,
     scale: bool = False,
     address: None | str = None,
     verbose: bool = False,
@@ -100,30 +121,29 @@ def grid_search(
     values = list(hyperparams.values())
     combinations = list(product(*values))
 
+    # get the score metric function
+    score_func = metrics[metric]["func"]
+
     if verbose:
-        print(f"{len(combinations) * k} total training")
+        print(f"total combinations: {len(combinations)}")
+        print(f"total training: {len(combinations) * k}")
 
     params_list = [{k: v for k, v in zip(keys, comb)} for comb in combinations]
     tasks = [
-        delayed(train_and_score)(model_type, X, y, k, score_metric, scale, params)
+        delayed(train_and_score)(model_type, X, y, k, score_func, scale, params)
         for params in params_list
     ]
 
-    try:
-        start = time.perf_counter()
-        futures = client.compute(tasks)
-        if verbose:
-            progress(futures)
+    start = time.perf_counter()
+    futures = client.compute(tasks)
+    if verbose:
+        progress(futures)
+    results = client.gather(futures)
+    end = time.perf_counter()
 
-        results = client.gather(futures)
-        end = time.perf_counter()
-    except KeyboardInterrupt:
-        print("keybaord interrupt")
-        client.cancel(futures, force=True)
-    finally:
-        client.close()
+    rev = metrics[metric]["reverse"]
+    results = sorted(results, key=max_order if rev else min_order)
 
-    results = sorted(results, key=order, reverse=True)
     # log some statistics
     if verbose:
         failed = sum(r["score"] == -np.inf for r in results)
