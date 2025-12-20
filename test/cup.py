@@ -68,7 +68,7 @@ if __name__ == "__main__":
         hyperparams = {
             "hidden_layer_sizes": [(32,)],
             "activation": ["tanh"],
-            "learning_rate": [0.03],
+            "learning_rate": [0.003],
             "lam": [0.0, 0.0001],
             "alpha": [0.0, 0.9],
             "tol": [1e-5],
@@ -93,9 +93,9 @@ if __name__ == "__main__":
         if args.save:
             with open("results/cup.json", "w") as fp:
                 json.dump(results, fp, indent=2)
-
-    with open("results/cup.json", "r") as fp:
-        results = json.load(fp)
+    else:
+        with open("results/cup.json", "r") as fp:
+            results = json.load(fp)
 
     best = results[0]
     print(json.dumps(best["parameters"], indent=2))
