@@ -2,12 +2,13 @@ import time
 from itertools import product
 
 import numpy as np
+import pandas as pd
 from dask.delayed import delayed
 from dask.distributed import Client, progress
-from sklearn.metrics import accuracy_score, f1_score, mean_squared_error
+from sklearn.metrics import accuracy_score, f1_score
 from sklearn.preprocessing import StandardScaler
 
-from neural.metrics import mean_euclidean_error
+from neural.metrics import neg_mean_euclidean_error, neg_mean_squared_error
 
 
 def kfold(n, k):
@@ -63,37 +64,21 @@ def train_and_score(
             predictions = model.predict(X_val)
             score = metric(y_val, predictions)
         except Exception:
-            return {"score": float(-np.inf), "parameters": params}
+            params["score"] = float(-np.inf)
+            return params
 
         scores.append(score)
         mask[start:end] = False
 
-    return {"score": float(np.mean(scores) - np.std(scores)), "parameters": params}
-
-
-# used for accuracy or f1
-def max_order(x: dict):
-    score, params = x["score"], x["parameters"]
-    hls = params["hidden_layer_sizes"]
-    lam = params["lam"]
-
-    return (-score, len(hls), sum(hls), -lam)
-
-
-# used for MSE or MEE
-def min_order(x: dict):
-    score, params = x["score"], x["parameters"]
-    hls = params["hidden_layer_sizes"]
-    lam = params["lam"]
-
-    return (score, -len(hls), -sum(hls), lam)
+    params["score"] = float(np.mean(scores))
+    return params
 
 
 metrics = {
-    "accuracy": {"func": accuracy_score, "reverse": True},
-    "f1": {"func": f1_score, "reverse": True},
-    "mse": {"func": mean_squared_error, "reverse": False},
-    "mee": {"func": mean_euclidean_error, "reverse": False},
+    "accuracy": accuracy_score,
+    "f1": f1_score,
+    "mse": neg_mean_squared_error,
+    "mee": neg_mean_euclidean_error,
 }
 
 
@@ -107,7 +92,7 @@ def grid_search(
     scale: bool = False,
     address: None | str = None,
     verbose: bool = False,
-) -> list[dict]:
+) -> pd.DataFrame:
     # dask init
     if address:
         client = Client(address)
@@ -122,7 +107,7 @@ def grid_search(
     combinations = list(product(*values))
 
     # get the score metric function
-    score_func = metrics[metric]["func"]
+    score_func = metrics[metric]
 
     if verbose:
         print(f"total combinations: {len(combinations)}")
@@ -141,16 +126,19 @@ def grid_search(
     results = client.gather(futures)
     end = time.perf_counter()
 
-    rev = metrics[metric]["reverse"]
-    results = sorted(results, key=max_order if rev else min_order)
+    assert isinstance(results, list)
+    keys = results[0].keys()
+    df = pd.DataFrame({k: [r[k] for r in results] for k in keys})
+    df = df.sort_values(by=["score"], ascending=False)
+    df["score"] = df["score"].abs()
 
     # log some statistics
     if verbose:
-        failed = sum(r["score"] == -np.inf for r in results)
-        print(f"failed {failed} times")
+        # failed = df.applymap(np.isinf).any(axis=1).sum()
+        # print(f"failed {failed} times")
         print(f"duration: {end - start:.2f} seconds")
 
-    return results
+    return df
 
 
 # def nested_grid_search(

@@ -8,6 +8,7 @@ from sklearn.preprocessing import StandardScaler
 
 from neural.metrics import mean_euclidean_error
 from neural.network import Regressor
+from neural.utils import save_results
 from neural.validation import grid_search
 
 if __name__ == "__main__":
@@ -65,31 +66,43 @@ if __name__ == "__main__":
             "max_iter": [3000],
         }
 
+        hyperparams = {
+            "hidden_layer_sizes": [(32,)],
+            "activation": ["relu"],
+            "learning_rate": [0.001, 0.01],
+            "lam": [0.0001],
+            "alpha": [0.9],
+            "tol": [1e-5],
+            "batch_size": [64],
+            "shuffle": [False, True],
+            "max_iter": [3000],
+        }
+
         results = grid_search(
             model_type=Regressor,
             hyperparams=hyperparams,
             X=X_train,
             y=y_train,
-            k=10,
+            k=2,
             metric="mee",
             scale=True,
             address=args.dask,
             verbose=True,
         )
 
-        # save results to a json file
+        # save results to a CSV file
         if args.save:
-            with open("results/cup.json", "w") as fp:
-                json.dump(results, fp, indent=2)
+            save_results("results/cup.csv", results)
     else:
-        with open("results/cup.json", "r") as fp:
-            results = json.load(fp)
+        results = pd.read_csv("results/cup.csv")
 
-    best = results[0]
-    print(json.dumps(best["parameters"], indent=2))
+    best = results.iloc[0]
+    params = best.iloc[1:].to_dict()
+    params["hidden_layer_sizes"] = json.loads(params["hidden_layer_sizes"])
+
+    print("parameters: ", json.dumps(params, indent=2))
     print(f"best grid search score: {best['score']:.2f}")
 
-    params = best["parameters"]
     net = Regressor(**params)
 
     # normalize train and test set
@@ -109,21 +122,32 @@ if __name__ == "__main__":
 
     # training accuracy
     y_pred = net.predict(X_train)
-    # y_train = y_scaler.inverse_transform(y_train)
-    # y_pred = y_scaler.inverse_transform(y_pred)
+    y_train = y_scaler.inverse_transform(y_train)
+    y_pred = y_scaler.inverse_transform(y_pred)
     train_score = mean_euclidean_error(y_train, y_pred)
     print(f"train MEE: {train_score:.3f}")
 
     # test accuracy
     y_pred = net.predict(X_test)
-    # y_test = y_scaler.inverse_transform(y_test)
-    # y_pred = y_scaler.inverse_transform(y_pred)
+    y_test = y_scaler.inverse_transform(y_test)
+    y_pred = y_scaler.inverse_transform(y_pred)
     test_score = mean_euclidean_error(y_test, y_pred)
     print(f"test MEE: {test_score:.3f}")
 
-    mtn = np.mean(np.linalg.norm(y_test, axis=1))
-    print(f"mean target norm: {mtn:.2f}")
-    print(f"percentage error: {test_score / mtn:.2f}")
+    rmse_per_output = np.sqrt(np.mean((y_test - y_pred) ** 2, axis=0))
+    range_per_output = np.max(y_test, axis=0) - np.min(y_test, axis=0)
+    nrmse = np.mean(rmse_per_output / range_per_output)
+    print(f"mean NRMSE: {nrmse:.3f}")
+
+    std_per_output = np.std(y_test, axis=0)
+    print(f"std per output: {std_per_output}")
+    nrmse_std = np.mean(rmse_per_output / std_per_output)
+    print(f"mean NRMSE (std): {nrmse_std:.3f}")
+
+    mse_per_output = np.mean((y_test - y_pred) ** 2, axis=0)
+    var_per_output = np.var(y_test, axis=0)
+    r2_per_output = 1 - mse_per_output / var_per_output
+    print(f"R2: {np.mean(r2_per_output):.3f}")
 
     plt.title("Loss Curve")
     plt.plot(net.loss_curve, label="training")
