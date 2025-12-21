@@ -121,10 +121,9 @@ if __name__ == "__main__":
     test_score = mean_euclidean_error(y_test, y_pred)
     print(f"test MEE: {test_score:.3f}")
 
-    denom = np.max(y_test) - np.min(y_test)
-    print(f"y_max - y_min: {denom:.2f}")
-
-    print(f"{test_score / denom:.2f}")
+    mtn = np.mean(np.linalg.norm(y_test, axis=1))
+    print(f"mean target norm: {mtn:.2f}")
+    print(f"percentage error: {test_score / mtn:.2f}")
 
     plt.title("Loss Curve")
     plt.plot(net.loss_curve, label="training")
