@@ -23,6 +23,24 @@ def relu_d(x):
     return (x > 0).astype(float)
 
 
+def leaky_relu(x):
+    return np.where(x > 0, x, 0.01 * x)
+
+
+def leaky_relu_d(x):
+    return np.where(x > 0, 1, 0.01)
+
+
+def elu(x):
+    x = np.asarray(x)
+    return np.where(x > 0, x, np.exp(x) - 1)
+
+
+def elu_d(x):
+    x = np.asarray(x)
+    return np.where(x > 0, 1.0, np.exp(x))
+
+
 # dictionary of activation functions
 # every field returns a tuple with
 # 1. the activation function
@@ -33,4 +51,6 @@ activations = {
     "logistic": (logistic, logistic_d),
     "tanh": (np.tanh, tanh_d),
     "relu": (relu, relu_d),
+    "leaky_relu": (leaky_relu, leaky_relu_d),
+    "elu": (elu, elu_d),
 }
