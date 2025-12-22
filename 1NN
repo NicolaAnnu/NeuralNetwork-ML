@@ -1,0 +1,52 @@
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.neighbors import KNeighborsRegressor
+import numpy as np
+from sklearn.metrics import mean_squared_error
+import pandas as pv
+import matplotlib.pyplot as plt
+
+
+
+df = pv.read_csv("ml_cup_train.csv", header=None)
+X = df.iloc[:, 1:13].to_numpy()
+Y = df.iloc[:, 13:].to_numpy()
+
+indices = np.random.permutation(X.shape[0])
+
+# 2. Usa questi indici per riordinare entrambi gli array
+X = X[indices]
+Y = Y[indices]
+
+
+
+split_index = int(0.7 * X.shape[0])
+X_test = X[split_index:,:]
+Y_test = Y[split_index:,:]
+
+X = X[:split_index,:]
+Y = Y[:split_index,:]
+
+
+model = Pipeline([
+    ("scaler", StandardScaler()),
+    ("knn", KNeighborsRegressor(n_neighbors=1))
+])
+
+model.fit(X, Y)
+Y_pred = model.predict(X_test)
+for i in [0, 1, 2, 3]:
+    score = np.sqrt(mean_squared_error(Y_test[:, i], Y_pred[:, i]))
+    print(f"RMSE output {i+1}:", score)
+plt.figure(1)
+plt.scatter(Y_test[:, 0], Y_pred[:, 0], label="Output 1", alpha=0.5)
+plt.figure(2)
+plt.scatter(Y_test[:, 1], Y_pred[:, 1], label="Output 2", alpha=0.5)
+plt.figure(3)
+plt.scatter(Y_test[:, 2], Y_pred[:, 2], label="Output 3", alpha=0.5)
+plt.figure(4)
+plt.scatter(Y_test[:, 3], Y_pred[:, 3], label="Output 4", alpha=0.5)
+plt.xlabel("True Values")
+plt.ylabel("Predicted Values")
+plt.legend()
+plt.show()

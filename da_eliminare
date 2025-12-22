@@ -1,0 +1,99 @@
+import numpy as np
+import pandas as pd
+from keras.layers import Input, Dense
+from keras.models import Model
+from keras.optimizers import Adam
+from keras.callbacks import EarlyStopping
+from sklearn.preprocessing import StandardScaler
+from joblib import Parallel, delayed
+import os
+
+# --- 1. Funzione Helper (Deve stare fuori dal main) ---
+def train_evaluate_model(params, X_train, y_train):
+    # Importiamo tensorflow qui dentro per evitare conflitti su Windows
+    import tensorflow as tf
+    
+    # Opzionale: Se hai conflitti con la GPU, forza l'uso della CPU per i worker
+    # os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+
+    # Costruzione Modello
+    inputs = Input(shape=(X_train.shape[1],))
+    hidden = Dense(params['neurons'], activation="relu")(inputs)
+    hidden = Dense(64, activation="relu")(hidden)
+    outputs = Dense(y_train.shape[1], activation='linear')(hidden)
+    model = Model(inputs=inputs, outputs=outputs)
+    
+    model.compile(
+        optimizer=Adam(learning_rate=params['learning_rate']),
+        loss="mse",
+        metrics=["mae"]
+    )
+    
+    es = EarlyStopping(monitor='val_loss', patience=20, restore_best_weights=True)
+    
+    # Usiamo verbose=0 per non avere output confusi
+    history = model.fit(
+        X_train, y_train,
+        epochs=300, 
+        batch_size=params['batch_size'],
+        validation_split=0.2,
+        callbacks=[es],
+        verbose=0 
+    )
+    
+    return {
+        'params': params,
+        'score': min(history.history['val_loss'])
+    }
+
+# --- 2. Blocco Principale (OBBLIGATORIO SU WINDOWS) ---
+if __name__ == '__main__':
+    
+    print("Caricamento dati...")
+    # Caricamento dati (spostato qui per sicurezza)
+    df = pd.read_csv("ml_cup_train.csv", header=None)
+    X = df.iloc[:, 1:13].to_numpy()
+    y = df.iloc[:, 13:].to_numpy()
+
+    indices = np.random.permutation(X.shape[0])
+    X = X[indices]
+    y = y[indices]
+
+    split_index = int(0.8 * X.shape[0])
+    X_train = X[:split_index,:]
+    y_train = y[:split_index,:]
+    
+    # Scaling
+    scaler_X = StandardScaler()
+    scaler_Y = StandardScaler()
+    X_train = scaler_X.fit_transform(X_train)
+    y_train = scaler_Y.fit_transform(y_train)
+
+    # Definizione Griglia
+    param_grid = []
+    # Riduciamo un po' la griglia per fare un test veloce
+    for lr in [0.01, 0.001]:
+        for bs in [32, 64]:
+            for neurons in [64, 128]:
+                param_grid.append({'learning_rate': lr, 'batch_size': bs, 'neurons': neurons})
+
+    print(f"Inizio Grid Search su {len(param_grid)} combinazioni usando TUTTI i processori...")
+    
+    # Esecuzione Parallela
+    # n_jobs=-1 usa tutti i core. Se il PC rallenta troppo, metti n_jobs=-2
+    results = Parallel(n_jobs=-1, verbose=10)(
+        delayed(train_evaluate_model)(p, X_train, y_train) for p in param_grid
+    )
+
+    # Ordina e stampa il migliore
+    results.sort(key=lambda x: x['score'])
+    best_result = results[0]
+
+    print("\n" + "="*40)
+    print(f"VINCITORE:")
+    print(f"Parametri: {best_result['params']}")
+    print(f"Val Loss (MSE Scaled): {best_result['score']:.5f}")
+    print("="*40)
+    
+    # Qui potresti salvare i risultati su un file CSV
+    # pd.DataFrame(results).to_csv("grid_search_results.csv", index=False)

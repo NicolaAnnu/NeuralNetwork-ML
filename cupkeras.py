@@ -10,6 +10,8 @@ from sklearn.utils import shuffle
 import pandas as pd
 from keras.callbacks import EarlyStopping
 
+
+
 # Data loading and scaling
 df = pd.read_csv("ml_cup_train.csv", header=None)
 X = df.iloc[:, 1:13].to_numpy()
@@ -45,11 +47,12 @@ X = scaler_X.fit_transform(X)
 inputs = Input(shape=(X.shape[1],))
 hidden = Dense(128,activation="relu")(inputs)
 hidden = Dense(64,activation="relu")(hidden)
+hidden = Dense(32,activation="relu")(hidden)
 outputs = Dense(y.shape[1], activation='linear')(hidden)
 model = Model(inputs=inputs, outputs=outputs)
 
 # Model compilation
-adam_optimizer = Adam(learning_rate = 0.0005) # Instantiate Adam optimizer
+adam_optimizer = Adam(learning_rate = 0.0001) # Instantiate Adam optimizer
 model.compile(
     optimizer=adam_optimizer, # Pass the optimizer instance
     loss="mse",
@@ -58,7 +61,7 @@ model.compile(
 from keras.callbacks import EarlyStopping
 early_stopping = EarlyStopping(
     monitor='val_loss',       # Controlla l'errore sui dati di test/validazione
-    patience=40,              # Aspetta 10 epoche senza miglioramenti prima di stoppare
+    patience=100,              # Aspetta 20 epoche senza miglioramenti prima di stoppare
     restore_best_weights=True
  ) # Alla fine, ripristina i pesi migliori ottenuti
 # Model training
@@ -66,13 +69,14 @@ history = model.fit(
     X,
     y,
     epochs=2000,
-    batch_size=64,
-    validation_split=0.2,
+    batch_size=16,
+    validation_split=0.1,
     callbacks=[early_stopping],
     verbose=1
 )
 
 # Plotting training history
+plt.figure(0)
 plt.plot(history.history['loss'], label='Training Loss')
 plt.plot(history.history['val_loss'], label='Validation Loss')
 
@@ -101,5 +105,21 @@ min_test = np.min(y_test)
 delta_train = max_test - min_test
 print(max_test, min_test)
 print(f"delta train :{delta_train}")
+
+for i in [0, 1, 2, 3]:
+    score = np.mean(((y_test[:, i] - y_pred[:, i]))/(y_test[:,i]))
+    print(f"RMSE output {i+1}:", score)
+plt.figure(1)
+plt.scatter(y_test[:, 0], y_pred_real[:, 0], label="Output 1", alpha=0.5)
+plt.figure(2)
+plt.scatter(y_test[:, 1], y_pred_real[:, 1], label="Output 2", alpha=0.5)
+plt.figure(3)
+plt.scatter(y_test[:, 2], y_pred_real[:, 2], label="Output 3", alpha=0.5)
+plt.figure(4)
+plt.scatter(y_test[:, 3], y_pred_real[:, 3], label="Output 4", alpha=0.5)
+plt.xlabel("True Values")
+plt.ylabel("Predicted Values")
+plt.legend()
+plt.show()
 
 plt.show()
