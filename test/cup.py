@@ -8,6 +8,7 @@ from sklearn.preprocessing import StandardScaler
 
 from neural.metrics import mean_euclidean_error
 from neural.network import Regressor
+from neural.utils import dump_results, load_results
 from neural.validation import grid_search
 
 if __name__ == "__main__":
@@ -54,15 +55,20 @@ if __name__ == "__main__":
     # if --gs argument is passed the grid search is performed
     if args.gs:
         hyperparams = {
-            "hidden_layer_sizes": [(32, 32), (64, 64)],
-            "activation": ["relu"],
-            "learning_rate": [0.001, 0.003, 0.01, 0.03, 0.05, 0.1],
-            "lam": [0.0, 0.00005, 0.0001],
+            "hidden_layer_sizes": [
+                (32,),
+                (64,),
+                (32, 32),
+                (64, 64),
+            ],
+            "activation": ["tanh", "relu", "leaky_relu", "elu"],
+            "learning_rate": [0.001, 0.003, 0.01, 0.03],
+            "lam": [0.0, 0.0001],
             "alpha": [0.0, 0.7, 0.9],
-            "tol": [1e-5],
+            "tol": [1e-6],
             "batch_size": [32, 64],
             "shuffle": [False, True],
-            "max_iter": [3000],
+            "max_iter": [5000],
         }
 
         results = grid_search(
@@ -79,13 +85,10 @@ if __name__ == "__main__":
 
         # save results to a JSON file
         if args.save:
-            with open("results/cup.json", "w") as fp:
-                results = json.dump(results, fp, indent=2)
+            dump_results("results/cup.json", results)
     else:
-        with open("results/cup.json", "r") as fp:
-            results = json.load(fp)
+        results = load_results("results/cup.json")
 
-    assert results is not None
     best = sorted(results, key=lambda x: x["score"])[0]
     print(json.dumps(best["parameters"], indent=2))
     print(f"best grid search score: {best['score']:.2f}")
