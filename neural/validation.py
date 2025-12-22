@@ -58,6 +58,11 @@ def train_and_score(
         try:
             net.fit(X_train, y_train)
             predictions = net.predict(X_val)
+
+            if scale:
+                y_val = y_scaler.inverse_transform(y_val)
+                predictions = y_scaler.inverse_transform(predictions)
+
             score = metric(y_val, predictions)
         except Exception:
             return {
