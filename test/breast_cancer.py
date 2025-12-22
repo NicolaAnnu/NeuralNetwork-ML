@@ -28,7 +28,7 @@ if __name__ == "__main__":
     }
 
     net, score = grid_search(
-        model_type=Classifier,
+        model=Classifier,
         hyperparams=hyperparams,
         X=X_train,
         y=y_train,

@@ -8,7 +8,6 @@ from sklearn.preprocessing import StandardScaler
 
 from neural.metrics import mean_euclidean_error
 from neural.network import Regressor
-from neural.utils import save_results
 from neural.validation import grid_search
 
 if __name__ == "__main__":
@@ -67,32 +66,32 @@ if __name__ == "__main__":
         }
 
         results = grid_search(
-            model_type=Regressor,
+            model=Regressor,
             hyperparams=hyperparams,
             X=X_train,
             y=y_train,
             k=10,
-            metric="mee",
+            metric=mean_euclidean_error,
             scale=True,
             address=args.dask,
             verbose=True,
         )
 
-        # save results to a CSV file
+        # save results to a JSON file
         if args.save:
-            save_results("results/cup.csv", results)
+            with open("results/cup.json", "w") as fp:
+                results = json.dump(results, fp, indent=2)
     else:
-        results = pd.read_csv("results/cup.csv")
+        with open("results/cup.json", "r") as fp:
+            results = json.load(fp)
 
-    best = results.iloc[-1]
-    params = best.iloc[:-1].to_dict()
-
-    if isinstance(params["hidden_layer_sizes"], str):
-        params["hidden_layer_sizes"] = json.loads(params["hidden_layer_sizes"])
-
-    print("parameters: ", json.dumps(params, indent=2))
+    assert results is not None
+    best = sorted(results, key=lambda x: x["score"])[0]
+    print(json.dumps(best["parameters"], indent=2))
     print(f"best grid search score: {best['score']:.2f}")
+    print(f"best grid search std score: {best['std']:.2f}")
 
+    params = best["parameters"]
     net = Regressor(**params)
 
     # normalize train and test set

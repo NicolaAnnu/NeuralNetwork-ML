@@ -2,13 +2,9 @@ import time
 from itertools import product
 
 import numpy as np
-import pandas as pd
 from dask.delayed import delayed
 from dask.distributed import Client, progress
-from sklearn.metrics import accuracy_score, f1_score
 from sklearn.preprocessing import StandardScaler
-
-from neural.metrics import neg_mean_euclidean_error, neg_mean_squared_error
 
 
 def kfold(n, k):
@@ -27,7 +23,7 @@ def kfold(n, k):
 
 
 def train_and_score(
-    model_type,
+    model,
     X: np.ndarray,
     y: np.ndarray,
     k: int,
@@ -57,42 +53,40 @@ def train_and_score(
             y_train = y_scaler.fit_transform(y_train)
             y_val = y_scaler.transform(y_val)
 
-        model = model_type(**params)
+        net = model(**params)
 
         try:
-            model.fit(X_train, y_train)
-            predictions = model.predict(X_val)
+            net.fit(X_train, y_train)
+            predictions = net.predict(X_val)
             score = metric(y_val, predictions)
         except Exception:
-            params["score"] = float(-np.inf)
-            return params
+            return {
+                "score": -np.inf,
+                "std": np.inf,
+                "parameters": params,
+            }
 
         scores.append(score)
         mask[start:end] = False
 
-    params["score"] = float(np.mean(scores))
-    return params
-
-
-metrics = {
-    "accuracy": accuracy_score,
-    "f1": f1_score,
-    "mse": neg_mean_squared_error,
-    "mee": neg_mean_euclidean_error,
-}
+    return {
+        "score": np.mean(scores),
+        "std": np.std(scores),
+        "parameters": params,
+    }
 
 
 def grid_search(
-    model_type,
+    model,
     hyperparams: dict,
     X: np.ndarray,
     y: np.ndarray,
     k: int,
-    metric: str,
+    metric,
     scale: bool = False,
     address: None | str = None,
     verbose: bool = False,
-) -> pd.DataFrame:
+) -> list[dict]:
     # dask init
     if address:
         client = Client(address)
@@ -106,16 +100,13 @@ def grid_search(
     values = list(hyperparams.values())
     combinations = list(product(*values))
 
-    # get the score metric function
-    score_func = metrics[metric]
-
     if verbose:
         print(f"total combinations: {len(combinations)}")
         print(f"total training: {len(combinations) * k}")
 
     params_list = [{k: v for k, v in zip(keys, comb)} for comb in combinations]
     tasks = [
-        delayed(train_and_score)(model_type, X, y, k, score_func, scale, params)
+        delayed(train_and_score)(model, X, y, k, metric, scale, params)
         for params in params_list
     ]
 
@@ -127,16 +118,11 @@ def grid_search(
     results = client.gather(futures)
     end = time.perf_counter()
 
-    assert isinstance(results, list)
-    keys = results[0].keys()
-    df = pd.DataFrame({k: [r[k] for r in results] for k in keys})
-    df = df.sort_values(by=["score"], ascending=False)
-    df["score"] = df["score"].abs()
-
     # log some statistics
+    assert isinstance(results, list)
     if verbose:
-        # failed = df.applymap(np.isinf).any(axis=1).sum()
-        # print(f"failed {failed} times")
+        failed = sum(r["score"] == -np.inf for r in results)
+        print(f"failed {failed} times")
         print(f"duration: {end - start:.2f} seconds")
 
-    return df
+    return results
