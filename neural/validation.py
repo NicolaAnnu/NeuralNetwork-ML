@@ -119,6 +119,7 @@ def grid_search(
         for params in params_list
     ]
 
+    # perform parallel k-folds
     start = time.perf_counter()
     futures = client.compute(tasks)
     if verbose:
@@ -139,49 +140,3 @@ def grid_search(
         print(f"duration: {end - start:.2f} seconds")
 
     return df
-
-
-# def nested_grid_search(
-#     model_type,
-#     hyperparams: dict,
-#     X: np.ndarray,
-#     y: np.ndarray,
-#     k: int,
-#     score_metric,
-#     scale: bool = False,
-#     verbose: bool = False,
-# ) -> tuple[Classifier | Regressor, float]:
-#     model, _ = grid_search(
-#         model_type,
-#         hyperparams,
-#         X,
-#         y,
-#         k,
-#         score_metric,
-#         scale,
-#         verbose,
-#     )
-#
-#     hyperparams2 = {}
-#     for key in hyperparams.keys():
-#         best_value = model.__dict__[key]
-#
-#         if len(hyperparams[key]) == 1:
-#             hyperparams2[key] = [best_value]
-#         elif isinstance(best_value, float):
-#             center = best_value
-#             width = best_value / 3
-#             hyperparams2[key] = np.linspace(
-#                 center - width, center + width, 4, dtype=float
-#             ).tolist()
-#         elif isinstance(best_value, int):
-#             # center = best_value
-#             # width = best_value // 2
-#             # hyperparams2[key] = np.linspace(
-#             #     center - width, center + width, 3, dtype=int
-#             # ).tolist()
-#             hyperparams2[key] = [best_value]
-#         else:
-#             hyperparams2[key] = [best_value]
-#
-#     return grid_search(model_type, hyperparams2, X, y, k, score_metric, scale, verbose)

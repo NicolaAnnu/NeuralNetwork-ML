@@ -66,24 +66,12 @@ if __name__ == "__main__":
             "max_iter": [3000],
         }
 
-        hyperparams = {
-            "hidden_layer_sizes": [(32,)],
-            "activation": ["relu"],
-            "learning_rate": [0.001, 0.01],
-            "lam": [0.0001],
-            "alpha": [0.9],
-            "tol": [1e-5],
-            "batch_size": [64],
-            "shuffle": [False, True],
-            "max_iter": [3000],
-        }
-
         results = grid_search(
             model_type=Regressor,
             hyperparams=hyperparams,
             X=X_train,
             y=y_train,
-            k=2,
+            k=10,
             metric="mee",
             scale=True,
             address=args.dask,
@@ -96,9 +84,11 @@ if __name__ == "__main__":
     else:
         results = pd.read_csv("results/cup.csv")
 
-    best = results.iloc[0]
-    params = best.iloc[1:].to_dict()
-    params["hidden_layer_sizes"] = json.loads(params["hidden_layer_sizes"])
+    best = results.iloc[-1]
+    params = best.iloc[:-1].to_dict()
+
+    if isinstance(params["hidden_layer_sizes"], str):
+        params["hidden_layer_sizes"] = json.loads(params["hidden_layer_sizes"])
 
     print("parameters: ", json.dumps(params, indent=2))
     print(f"best grid search score: {best['score']:.2f}")
