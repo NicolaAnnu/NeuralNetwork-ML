@@ -14,6 +14,7 @@ class Network:
         tol: float = 1e-5,
         batch_size: int = 10,
         shuffle: bool = False,
+        early_stopping: bool = False,
         max_iter: int = 200,
     ) -> None:
         self.hidden_layer_sizes = hidden_layer_sizes
@@ -35,6 +36,7 @@ class Network:
         self.tol = tol
         self.batch_size = batch_size
         self.shuffle = shuffle
+        self.early_stopping = early_stopping
         self.max_iter = max_iter
 
     def init_weights(self, input_size):
@@ -99,6 +101,11 @@ class Network:
                 out = self.forward(X_val)
                 self.val_loss_curve.append(np.mean((out - y_val) ** 2))
 
+            # early stopping
+            if self.early_stopping and len(self.val_loss_curve) >= 2:
+                if self.val_loss_curve[-1] > self.val_loss_curve[-2]:
+                    break
+
             # stopping criteria
             if abs(best_loss - self.loss_curve[-1]) < self.tol:
                 stop_counter += 1
@@ -125,6 +132,7 @@ class Classifier(Network):
         tol: float = 1e-5,
         batch_size: int = 10,
         shuffle: bool = False,
+        early_stopping: bool = False,
         max_iter: int = 200,
     ) -> None:
         super().__init__(
@@ -136,6 +144,7 @@ class Classifier(Network):
             tol=tol,
             batch_size=batch_size,
             shuffle=shuffle,
+            early_stopping=early_stopping,
             max_iter=max_iter,
         )
 
@@ -176,6 +185,7 @@ class Regressor(Network):
         tol: float = 1e-5,
         batch_size: int = 10,
         shuffle: bool = False,
+        early_stopping: bool = False,
         max_iter: int = 200,
     ) -> None:
         super().__init__(
@@ -187,6 +197,7 @@ class Regressor(Network):
             tol=tol,
             batch_size=batch_size,
             shuffle=shuffle,
+            early_stopping=early_stopping,
             max_iter=max_iter,
         )
 
