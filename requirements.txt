@@ -1,6 +1,7 @@
 numpy
 dask
 dask[distributed]
+bokeh
 matplotlib
 pandas
 scipy

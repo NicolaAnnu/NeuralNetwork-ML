@@ -61,6 +61,8 @@ class Network:
         y: np.ndarray,
         X_val: None | np.ndarray = None,
         y_val: None | np.ndarray = None,
+        X_test: None | np.ndarray = None,
+        y_test: None | np.ndarray = None,
     ):
         # initialize weights
         self.init_weights(X.shape[1])
@@ -73,9 +75,7 @@ class Network:
 
         self.loss_curve = []
         self.val_loss_curve = []
-
-        self.accuracy_curve = []
-        self.val_accuracy_curve = []
+        self.test_loss_curve = []
 
         best_loss = np.inf
         stop_counter = 0
@@ -96,10 +96,15 @@ class Network:
             out = self.forward(X)
             self.loss_curve.append(np.mean((out - y) ** 2))
 
-            # epoch loss and accuracy on unseen data
+            # epoch loss on validation set for early stopping
             if X_val is not None:
                 out = self.forward(X_val)
                 self.val_loss_curve.append(np.mean((out - y_val) ** 2))
+
+            # epoch loss on test set for plots
+            if X_test is not None:
+                out = self.forward(X_test)
+                self.test_loss_curve.append(np.mean((out - y_test) ** 2))
 
             # early stopping
             if self.early_stopping and len(self.val_loss_curve) >= 2:
@@ -154,6 +159,8 @@ class Classifier(Network):
         y: np.ndarray,
         X_val: None | np.ndarray = None,
         y_val: None | np.ndarray = None,
+        X_test: None | np.ndarray = None,
+        y_test: None | np.ndarray = None,
     ):
         # add output layer with one logistic unit
         output = Layer(
@@ -165,10 +172,10 @@ class Classifier(Network):
         )
         self.layers.append(output)
 
-        if y_val is not None:
-            super().fit(X, y.reshape(-1, 1), X_val, y_val.reshape(-1, 1))
-        else:
-            super().fit(X, y.reshape(-1, 1), X_val, y_val)
+        y_valtmp = None if y_val is None else y_val.reshape(-1, 1)
+        y_testtmp = None if y_test is None else y_test.reshape(-1, 1)
+
+        super().fit(X, y.reshape(-1, 1), X_val, y_valtmp, X_test, y_testtmp)
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         return np.round(self.forward(X)[:, 0])
@@ -207,6 +214,8 @@ class Regressor(Network):
         y: np.ndarray,
         X_val: None | np.ndarray = None,
         y_val: None | np.ndarray = None,
+        X_test: None | np.ndarray = None,
+        y_test: None | np.ndarray = None,
     ):
         # see if output should be 1-Dimensional or N-Dimensional
         n_outputs = 1 if (len(y.shape) == 1) else y.shape[1]
@@ -221,7 +230,7 @@ class Regressor(Network):
         )
         self.layers.append(output)
 
-        super().fit(X, y, X_val, y_val)
+        super().fit(X, y, X_val, y_val, X_test, y_test)
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         return self.forward(X)

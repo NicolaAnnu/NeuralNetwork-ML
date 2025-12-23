@@ -10,6 +10,7 @@ from sklearn.metrics import (
     confusion_matrix,
     f1_score,
 )
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder
 
 from neural.network import Classifier
@@ -44,12 +45,13 @@ if __name__ == "__main__":
         hyperparams = {
             "hidden_layer_sizes": [(3,)],
             "activation": ["logistic", "tanh", "elu"],
-            "learning_rate": [0.001, 0.003, 0.005, 0.01],
-            "lam": [0.0, 0.00005, 0.0001],
+            "learning_rate": [0.01, 0.03, 0.05, 0.07],
+            "lam": [0.0, 0.00001, 0.0001],
             "alpha": [0.0, 0.5, 0.7, 0.9],
             "tol": [1e-6],
             "batch_size": [16, 32, 64],
             "shuffle": [False, True],
+            "early_stopping": [False, True],
             "max_iter": [2000],
         }
 
@@ -59,7 +61,7 @@ if __name__ == "__main__":
             X=X_train,
             y=y_train,
             k=10,
-            metric="accuracy",
+            metric=accuracy_score,
             scale=False,
             address=args.dask,
             verbose=True,
@@ -72,14 +74,22 @@ if __name__ == "__main__":
     else:  # get params from last saved grid search
         results = load_results(f"results/monk{args.id}.json")
 
-    best = sorted(results, key=lambda x: x["score"])[0]
+    best = sorted(results, key=lambda x: x["score"] - x["std"], reverse=True)[0]
     print(json.dumps(best["parameters"], indent=2))
     print(f"best grid search score: {best['score']:.2f}")
     print(f"best grid search std score: {best['std']:.2f}")
 
     params = best["parameters"]
+
     net = Classifier(**params)
-    net.fit(X_train, y_train, X_test, y_test)
+    if params["early_stopping"]:
+        X_train, X_val, y_train, y_val = [
+            np.asarray(i) for i in train_test_split(X_train, y_train, test_size=0.05)
+        ]
+    else:
+        X_val, y_val = None, None
+
+    net.fit(X_train, y_train, X_val, y_val, X_test, y_test)
 
     print(f"converged in {len(net.loss_curve)} epochs")
     print(f"loss: {net.loss:.3f}")
@@ -112,10 +122,12 @@ if __name__ == "__main__":
     ConfusionMatrixDisplay(test_cm).plot()
     plt.show()
 
+    net.fit(X_train, y_train, X_test=X_test, y_test=y_test)
+
     plt.figure(figsize=(6, 5), dpi=150)
     plt.title("Loss Curve")
     plt.plot(net.loss_curve, label="training")
-    plt.plot(net.val_loss_curve, label="test")
+    plt.plot(net.test_loss_curve, label="test/validation")
     plt.xlabel("Epochs")
     plt.ylabel("Loss")
     plt.legend()

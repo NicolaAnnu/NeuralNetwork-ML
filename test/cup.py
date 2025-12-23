@@ -4,6 +4,7 @@ import json
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
 from neural.metrics import mean_euclidean_error
@@ -70,6 +71,19 @@ if __name__ == "__main__":
             "max_iter": [5000],
         }
 
+        hyperparams = {
+            "hidden_layer_sizes": [(64, 32)],
+            "activation": ["elu"],
+            "learning_rate": [0.05, 0.08],
+            "lam": [0.0, 0.0001],
+            "alpha": [0.0, 0.9],
+            "tol": [1e-5],
+            "batch_size": [32],
+            "shuffle": [False, True],
+            "early_stopping": [False, True],
+            "max_iter": [5000],
+        }
+
         results = grid_search(
             model=Regressor,
             hyperparams=hyperparams,
@@ -106,7 +120,14 @@ if __name__ == "__main__":
     y_test = np.asarray(y_scaler.transform(y_test))
 
     # train the model
-    net.fit(X_train, y_train, X_test, y_test)
+    if params["early_stopping"]:
+        X_train, X_val, y_train, y_val = [
+            np.asarray(i) for i in train_test_split(X_train, y_train, test_size=0.05)
+        ]
+    else:
+        X_val, y_val = None, None
+
+    net.fit(X_train, y_train, X_val, y_val, X_test, y_test)
 
     print(f"converged in {len(net.loss_curve)} epochs")
     print(f"loss: {net.loss:.3f}")
@@ -148,7 +169,7 @@ if __name__ == "__main__":
     plt.figure(figsize=(6, 5), dpi=150)
     plt.title("Loss Curve")
     plt.plot(net.loss_curve, label="training")
-    plt.plot(net.val_loss_curve, label="test")
+    plt.plot(net.test_loss_curve, label="test")
     plt.xlabel("Epochs")
     plt.ylabel("Loss")
     plt.legend()

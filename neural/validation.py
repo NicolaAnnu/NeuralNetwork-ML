@@ -56,7 +56,7 @@ def train_and_score(
         net = model(**params)
 
         try:
-            net.fit(X_train, y_train)
+            net.fit(X_train, y_train, X_val, y_val)
             predictions = net.predict(X_val)
 
             if scale:
