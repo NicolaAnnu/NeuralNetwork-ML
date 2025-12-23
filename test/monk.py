@@ -13,6 +13,7 @@ from sklearn.metrics import (
 from sklearn.preprocessing import OneHotEncoder
 
 from neural.network import Classifier
+from neural.utils import dump_results, load_results
 from neural.validation import grid_search
 
 if __name__ == "__main__":
@@ -21,6 +22,9 @@ if __name__ == "__main__":
     parser.add_argument("--gs", action="store_true", help="perform a grid search")
     parser.add_argument(
         "--save", action="store_true", help="save grid search results in a file"
+    )
+    parser.add_argument(
+        "--dask", type=str, default=None, help="perform a distributed grid search"
     )
     args = parser.parse_args()
 
@@ -39,12 +43,12 @@ if __name__ == "__main__":
     if args.gs:
         hyperparams = {
             "hidden_layer_sizes": [(3,)],
-            "activation": ["logistic", "tanh"],
-            "learning_rate": [0.001, 0.003, 0.01, 0.03, 0.1, 0.3],
+            "activation": ["logistic", "tanh", "elu"],
+            "learning_rate": [0.001, 0.003, 0.005, 0.01],
             "lam": [0.0, 0.00005, 0.0001],
             "alpha": [0.0, 0.5, 0.7, 0.9],
             "tol": [1e-6],
-            "batch_size": [8, 16, 32, 64],
+            "batch_size": [16, 32, 64],
             "shuffle": [False, True],
             "max_iter": [2000],
         }
@@ -57,22 +61,21 @@ if __name__ == "__main__":
             k=10,
             metric="accuracy",
             scale=False,
-            address="tcp://192.168.1.95:8786",
+            address=args.dask,
             verbose=True,
         )
 
         # save results to a json file
         if args.save:
-            with open(f"results/monk{args.id}.json", "w") as fp:
-                json.dump(results, fp, indent=2)
+            dump_results(f"results/monk{args.id}.json", results)
 
     else:  # get params from last saved grid search
-        with open(f"results/monk{args.id}.json", "r") as fp:
-            results = json.load(fp)
+        results = load_results(f"results/monk{args.id}.json")
 
-    best = results[0]
+    best = sorted(results, key=lambda x: x["score"])[0]
     print(json.dumps(best["parameters"], indent=2))
     print(f"best grid search score: {best['score']:.2f}")
+    print(f"best grid search std score: {best['std']:.2f}")
 
     params = best["parameters"]
     net = Classifier(**params)

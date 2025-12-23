@@ -8,7 +8,7 @@ from sklearn.preprocessing import StandardScaler
 
 from neural.metrics import mean_euclidean_error
 from neural.network import Regressor
-from neural.utils import dump_results, load_results
+from neural.utils import dump_results, load_results, target_plot
 from neural.validation import grid_search
 
 if __name__ == "__main__":
@@ -56,16 +56,15 @@ if __name__ == "__main__":
     if args.gs:
         hyperparams = {
             "hidden_layer_sizes": [
-                (32,),
-                (64,),
-                (32, 32),
                 (64, 64),
+                (64, 32),
+                (32, 16),
             ],
-            "activation": ["tanh", "relu", "leaky_relu", "elu"],
-            "learning_rate": [0.001, 0.003, 0.01, 0.03],
-            "lam": [0.0, 0.0001],
-            "alpha": [0.0, 0.7, 0.9],
-            "tol": [1e-6],
+            "activation": ["relu", "leaky_relu", "elu"],
+            "learning_rate": [0.01, 0.03, 0.05, 0.08],
+            "lam": [0.00008, 9.865e-5, 1.216e-4, 0.00015],
+            "alpha": [0.0, 0.5, 0.7, 0.9],
+            "tol": [1e-5],
             "batch_size": [32, 64],
             "shuffle": [False, True],
             "max_iter": [5000],
@@ -89,7 +88,7 @@ if __name__ == "__main__":
     else:
         results = load_results("results/cup.json")
 
-    best = sorted(results, key=lambda x: x["score"])[0]
+    best = sorted(results, key=lambda x: x["score"] + x["std"])[0]
     print(json.dumps(best["parameters"], indent=2))
     print(f"best grid search score: {best['score']:.2f}")
     print(f"best grid search std score: {best['std']:.2f}")
@@ -112,14 +111,19 @@ if __name__ == "__main__":
     print(f"converged in {len(net.loss_curve)} epochs")
     print(f"loss: {net.loss:.3f}")
 
-    # training accuracy
+    # training
     y_pred = net.predict(X_train)
     y_train = y_scaler.inverse_transform(y_train)
     y_pred = y_scaler.inverse_transform(y_pred)
     train_score = mean_euclidean_error(y_train, y_pred)
     print(f"train MEE: {train_score:.3f}")
 
-    # test accuracy
+    mse_per_output = np.mean((y_train - y_pred) ** 2, axis=0)
+    var_per_output = np.var(y_train, axis=0)
+    r2_per_output = 1 - mse_per_output / var_per_output
+    print(f"train R2: {np.mean(r2_per_output):.3f}")
+
+    # test
     y_pred = net.predict(X_test)
     y_test = y_scaler.inverse_transform(y_test)
     y_pred = y_scaler.inverse_transform(y_pred)
@@ -139,8 +143,9 @@ if __name__ == "__main__":
     mse_per_output = np.mean((y_test - y_pred) ** 2, axis=0)
     var_per_output = np.var(y_test, axis=0)
     r2_per_output = 1 - mse_per_output / var_per_output
-    print(f"R2: {np.mean(r2_per_output):.3f}")
+    print(f"test R2: {np.mean(r2_per_output):.3f}")
 
+    plt.figure(figsize=(6, 5), dpi=150)
     plt.title("Loss Curve")
     plt.plot(net.loss_curve, label="training")
     plt.plot(net.val_loss_curve, label="test")
@@ -149,3 +154,5 @@ if __name__ == "__main__":
     plt.legend()
     plt.tight_layout()
     plt.show()
+
+    target_plot(y_test, y_pred)
