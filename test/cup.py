@@ -55,15 +55,19 @@ if __name__ == "__main__":
     # if --gs argument is passed the grid search is performed
     if args.gs:
         hyperparams = {
-            "hidden_layer_sizes": [(64, 64)],
-            "activation": ["tanh", "relu", "leaky_relu"],
-            "learning_rate": [0.01, 0.03, 0.05],
-            "lam": np.logspace(-7, -4, 5).tolist(),
-            "alpha": [0.0, 0.7, 0.9],
-            "tol": [1e-5],
+            "hidden_layer_sizes": [
+                (64, 64),
+                (64, 48, 32),
+                (64, 64, 64),
+            ],
+            "activation": ["relu", "leaky_relu"],
+            "learning_rate": [0.05, 0.07, 0.09],
+            "lam": np.concatenate(([0.0], np.logspace(-7, -4, 4))).tolist(),
+            "alpha": [0.7, 0.9],
+            "tol": [1e-6],
             "batch_size": [16, 32, 64],
-            "shuffle": [False, True],
-            "early_stopping": [True],
+            "shuffle": [True],
+            "early_stopping": [False, True],
             "max_iter": [3000],
         }
 
@@ -85,10 +89,12 @@ if __name__ == "__main__":
     else:
         results = load_results("results/cup.json")
 
+    results = [r for r in results if (np.isfinite(r["score"]) and r["score"] < 40)]
+    results = [r for r in results if (np.isfinite(r["std"]) and r["std"] < 20)]
     best = sorted(results, key=lambda x: x["score"] + x["std"])[0]
     print(json.dumps(best["parameters"], indent=2))
-    print(f"best grid search score: {best['score']:.2f}")
-    print(f"best grid search std score: {best['std']:.2f}")
+    print(f"grid search score: {best['score']:.2f}")
+    print(f"grid search std score: {best['std']:.2f}")
 
     # normalize train and test set
     X_scaler = StandardScaler()

@@ -10,7 +10,6 @@ from sklearn.metrics import (
     confusion_matrix,
     f1_score,
 )
-from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder
 
 from neural.network import Classifier
@@ -44,12 +43,12 @@ if __name__ == "__main__":
     if args.gs:
         hyperparams = {
             "hidden_layer_sizes": [(3,)],
-            "activation": ["logistic", "tanh", "elu"],
-            "learning_rate": [0.01, 0.03, 0.05, 0.07],
-            "lam": [0.0, 0.00001, 0.0001],
-            "alpha": [0.0, 0.5, 0.7, 0.9],
+            "activation": ["tanh", "leaky_relu"],
+            "learning_rate": np.geomspace(0.01, 0.1, 4).tolist(),
+            "lam": np.concatenate(([0.0], np.logspace(-7, -4, 3))).tolist(),
+            "alpha": [0.0, 0.7, 0.9],
             "tol": [1e-6],
-            "batch_size": [16, 32, 64],
+            "batch_size": [8, 16],
             "shuffle": [False, True],
             "early_stopping": [False, True],
             "max_iter": [2000],
@@ -74,51 +73,53 @@ if __name__ == "__main__":
     else:  # get params from last saved grid search
         results = load_results(f"results/monk{args.id}.json")
 
-    best = sorted(results, key=lambda x: x["score"] - x["std"], reverse=True)[0]
+    results = [r for r in results if np.isfinite(r["score"])]
+    results = [r for r in results if np.isfinite(r["std"])]
+    best = sorted(results, key=lambda x: x["score"] - x["std"], reverse=True)[1]
     print(json.dumps(best["parameters"], indent=2))
     print(f"best grid search score: {best['score']:.2f}")
     print(f"best grid search std score: {best['std']:.2f}")
 
+    # re-train the model
+    loss_limit = -np.inf
     params = best["parameters"]
-
-    net = Classifier(**params)
     if params["early_stopping"]:
-        X_train, X_val, y_train, y_val = [
-            np.asarray(i) for i in train_test_split(X_train, y_train, test_size=0.05)
-        ]
-    else:
-        X_val, y_val = None, None
+        params["early_stopping"] = False  # always disable it for retraining
+        loss_limit = best["loss"]
 
-    net.fit(X_train, y_train, X_val=X_test, y_val=y_test)
+    params = best["parameters"]
+    net = Classifier(**params)
+
+    net.fit(X_train, y_train, loss_limit=loss_limit, X_val=X_test, y_val=y_test)
 
     print(f"converged in {len(net.loss_curve)} epochs")
     print(f"loss: {net.loss:.3f}")
 
     # training accuracy
-    net_pred = net.predict(X_train)
-    train_accuracy = accuracy_score(y_train, net_pred)
+    y_pred = net.predict(X_train)
+    train_accuracy = accuracy_score(y_train, y_pred)
     print(f"train accuracy: {train_accuracy:.2f}")
 
     # train f1
-    train_f1 = f1_score(y_train, net_pred)
+    train_f1 = f1_score(y_train, y_pred)
     print(f"train f1: {train_f1:.2f}")
 
     # train confusion matrix
-    train_cm = confusion_matrix(y_train, net_pred)
+    train_cm = confusion_matrix(y_train, y_pred)
     ConfusionMatrixDisplay(train_cm).plot()
     plt.show()
 
     # test accuracy
-    net_pred = net.predict(X_test)
-    test_accuracy = accuracy_score(y_test, net_pred)
+    y_pred = net.predict(X_test)
+    test_accuracy = accuracy_score(y_test, y_pred)
     print(f"test accuracy: {test_accuracy:.2f}")
 
     # test f1
-    test_f1 = f1_score(y_test, net_pred)
+    test_f1 = f1_score(y_test, y_pred)
     print(f"test f1: {test_f1:.2f}")
 
     # test confusion matrix
-    test_cm = confusion_matrix(y_test, net_pred)
+    test_cm = confusion_matrix(y_test, y_pred)
     ConfusionMatrixDisplay(test_cm).plot()
     plt.show()
 

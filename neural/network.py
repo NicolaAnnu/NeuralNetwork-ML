@@ -77,7 +77,7 @@ class Network:
 
         best_loss = np.inf
         stop_counter = 0
-        patience = 30
+        patience = 50
 
         if self.early_stopping:
             es_counter = 0
@@ -101,7 +101,7 @@ class Network:
             self.loss_curve.append(np.mean((out - y) ** 2))
 
             # check if loss limit is reached
-            if self.loss_curve[-1] <= loss_limit:
+            if self.loss_curve[-1] < loss_limit:
                 break
 
             # epoch loss on validation set for early stopping

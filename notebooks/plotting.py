@@ -131,3 +131,29 @@ def loss_fit(loss1, loss2, X, y, model1, model2):
 
     plt.tight_layout()
     plt.show()
+
+
+def param_boxplot(df, param, score_col="score"):
+    if param != "hidden_layer_sizes":
+        values = sorted(df[param].unique())
+        labels = [str(v) for v in values]
+        data = [df[df[param] == v][score_col] for v in values]
+    else:
+        # trasforma tutte le architetture in stringa leggibile
+        df["arch_str"] = df[param].apply(lambda x: "-".join(map(str, x)))
+        values = sorted(
+            df["arch_str"].unique(),
+            key=lambda s: (len(s.split("-")), sum(map(int, s.split("-")))),
+        )
+        data = [df[df["arch_str"] == v][score_col] for v in values]
+        labels = values
+
+    plt.figure(figsize=(10, 6), dpi=100)
+    plt.boxplot(data, positions=np.arange(1, len(values) + 1), widths=0.5)
+    plt.xticks(np.arange(1, len(values) + 1), labels, rotation=45)
+    plt.xlabel(param)
+    plt.ylabel(score_col)
+    plt.title(f"{param}")
+    plt.grid(axis="y", alpha=0.3)
+    plt.tight_layout()
+    plt.show()
