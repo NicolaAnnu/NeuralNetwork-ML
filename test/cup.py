@@ -4,7 +4,6 @@ import json
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
 from neural.metrics import mean_euclidean_error
@@ -45,8 +44,8 @@ if __name__ == "__main__":
     X = X[indices]
     y = y[indices]
 
-    # keep 10% for test
-    test_size = int(np.round(X.shape[0] * 0.1))
+    # keep 20% for test
+    test_size = int(np.round(X.shape[0] * 0.2))
     threshold = X.shape[0] - test_size
     X_train = X[:threshold]
     y_train = y[:threshold]
@@ -56,15 +55,15 @@ if __name__ == "__main__":
     # if --gs argument is passed the grid search is performed
     if args.gs:
         hyperparams = {
-            "hidden_layer_sizes": [(128, 64, 64), (128, 128, 64)],
-            "activation": ["relu", "leaky_relu"],
-            "learning_rate": [0.05, 0.06, 0.07],
-            "lam": [0.000075, 0.0001, 0.000125],
-            "alpha": [0.7, 0.8, 0.9],
+            "hidden_layer_sizes": [(64, 64)],
+            "activation": ["tanh", "relu", "leaky_relu"],
+            "learning_rate": [0.01, 0.03, 0.05],
+            "lam": [0.0, 0.0001],
+            "alpha": [0.0, 0.7, 0.9],
             "tol": [1e-5],
-            "batch_size": [16, 32],
+            "batch_size": [16, 32, 64],
             "shuffle": [False, True],
-            "early_stopping": [False],
+            "early_stopping": [True],
             "max_iter": [3000],
         }
 
@@ -91,9 +90,6 @@ if __name__ == "__main__":
     print(f"best grid search score: {best['score']:.2f}")
     print(f"best grid search std score: {best['std']:.2f}")
 
-    params = best["parameters"]
-    net = Regressor(**params)
-
     # normalize train and test set
     X_scaler = StandardScaler()
     X_train = X_scaler.fit_transform(X_train)
@@ -103,15 +99,15 @@ if __name__ == "__main__":
     y_train = y_scaler.fit_transform(y_train)
     y_test = np.asarray(y_scaler.transform(y_test))
 
-    # train the model
+    # re-train the model
+    loss_limit = -np.inf
+    params = best["parameters"]
     if params["early_stopping"]:
-        X_train, X_val, y_train, y_val = [
-            np.asarray(i) for i in train_test_split(X_train, y_train, test_size=0.05)
-        ]
-    else:
-        X_val, y_val = None, None
+        params["early_stopping"] = False  # always disable it for retraining
+        loss_limit = best["loss"]
 
-    net.fit(X_train, y_train, X_val, y_val, X_test, y_test)
+    net = Regressor(**params)
+    net.fit(X_train, y_train, loss_limit=loss_limit, X_val=X_test, y_val=y_test)
 
     print(f"converged in {len(net.loss_curve)} epochs")
     print(f"loss: {net.loss:.3f}")
@@ -153,7 +149,7 @@ if __name__ == "__main__":
     plt.figure(figsize=(6, 5), dpi=150)
     plt.title("Loss Curve")
     plt.plot(net.loss_curve, label="training")
-    plt.plot(net.test_loss_curve, label="test")
+    plt.plot(net.val_loss_curve, label="test")
     plt.xlabel("Epochs")
     plt.ylabel("Loss")
     plt.legend()

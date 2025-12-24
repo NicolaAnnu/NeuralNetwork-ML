@@ -35,6 +35,7 @@ def train_and_score(
 
     mask = np.array([False for _ in range(len(y))])
     scores = []
+    losses = []
     for start, end in folds:
         mask[start:end] = True
 
@@ -56,7 +57,7 @@ def train_and_score(
         net = model(**params)
 
         try:
-            net.fit(X_train, y_train, X_val, y_val)
+            net.fit(X_train, y_train, X_val=X_val, y_val=y_val)
             predictions = net.predict(X_val)
 
             if scale:
@@ -68,15 +69,18 @@ def train_and_score(
             return {
                 "score": -np.inf,
                 "std": np.inf,
+                "loss": np.inf,
                 "parameters": params,
             }
 
         scores.append(score)
+        losses.append(net.loss)
         mask[start:end] = False
 
     return {
         "score": np.mean(scores),
         "std": np.std(scores),
+        "loss": np.mean(losses),
         "parameters": params,
     }
 
@@ -122,6 +126,7 @@ def grid_search(
         progress(futures)
     results = client.gather(futures)
     end = time.perf_counter()
+    client.close()
 
     # log some statistics
     assert isinstance(results, list)

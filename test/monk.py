@@ -89,7 +89,7 @@ if __name__ == "__main__":
     else:
         X_val, y_val = None, None
 
-    net.fit(X_train, y_train, X_val, y_val, X_test, y_test)
+    net.fit(X_train, y_train, X_val=X_test, y_val=y_test)
 
     print(f"converged in {len(net.loss_curve)} epochs")
     print(f"loss: {net.loss:.3f}")
@@ -122,12 +122,12 @@ if __name__ == "__main__":
     ConfusionMatrixDisplay(test_cm).plot()
     plt.show()
 
-    net.fit(X_train, y_train, X_test=X_test, y_test=y_test)
+    net.fit(X_train, y_train, X_val=X_test, y_val=y_test)
 
     plt.figure(figsize=(6, 5), dpi=150)
     plt.title("Loss Curve")
     plt.plot(net.loss_curve, label="training")
-    plt.plot(net.test_loss_curve, label="test/validation")
+    plt.plot(net.val_loss_curve, label="test/validation")
     plt.xlabel("Epochs")
     plt.ylabel("Loss")
     plt.legend()

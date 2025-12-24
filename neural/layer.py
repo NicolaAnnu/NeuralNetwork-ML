@@ -33,6 +33,14 @@ class Layer:
         self.old_delta_w = np.zeros_like(self.W)
         self.old_delta_b = np.zeros_like(self.b)
 
+    def store_best(self) -> None:
+        self.best_W = self.W.copy()
+        self.best_b = self.b.copy()
+
+    def load_best(self) -> None:
+        self.W = self.best_W.copy()
+        self.b = self.best_b.copy()
+
     def forward(self, X: np.ndarray) -> np.ndarray:
         self.out = X
         self.net = X @ self.W + self.b
