@@ -58,7 +58,7 @@ if __name__ == "__main__":
             "hidden_layer_sizes": [(64, 64)],
             "activation": ["tanh", "relu", "leaky_relu"],
             "learning_rate": [0.01, 0.03, 0.05],
-            "lam": [0.0, 0.0001],
+            "lam": np.logspace(-7, -4, 5).tolist(),
             "alpha": [0.0, 0.7, 0.9],
             "tol": [1e-5],
             "batch_size": [16, 32, 64],
