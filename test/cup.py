@@ -46,7 +46,7 @@ if __name__ == "__main__":
     y = y[indices]
 
     # keep 10% for test
-    test_size = int(np.round(X.shape[0] * 0.2))
+    test_size = int(np.round(X.shape[0] * 0.1))
     threshold = X.shape[0] - test_size
     X_train = X[:threshold]
     y_train = y[:threshold]
@@ -56,32 +56,16 @@ if __name__ == "__main__":
     # if --gs argument is passed the grid search is performed
     if args.gs:
         hyperparams = {
-            "hidden_layer_sizes": [
-                (64, 64),
-                (64, 32),
-                (32, 16),
-            ],
-            "activation": ["relu", "leaky_relu", "elu"],
-            "learning_rate": [0.01, 0.03, 0.05, 0.08],
-            "lam": [0.00008, 9.865e-5, 1.216e-4, 0.00015],
-            "alpha": [0.0, 0.5, 0.7, 0.9],
+            "hidden_layer_sizes": [(128, 64, 64), (128, 128, 64)],
+            "activation": ["relu", "leaky_relu"],
+            "learning_rate": [0.05, 0.06, 0.07],
+            "lam": [0.000075, 0.0001, 0.000125],
+            "alpha": [0.7, 0.8, 0.9],
             "tol": [1e-5],
-            "batch_size": [32, 64],
+            "batch_size": [16, 32],
             "shuffle": [False, True],
-            "max_iter": [5000],
-        }
-
-        hyperparams = {
-            "hidden_layer_sizes": [(64, 32)],
-            "activation": ["elu"],
-            "learning_rate": [0.05, 0.08],
-            "lam": [0.0, 0.0001],
-            "alpha": [0.0, 0.9],
-            "tol": [1e-5],
-            "batch_size": [32],
-            "shuffle": [False, True],
-            "early_stopping": [False, True],
-            "max_iter": [5000],
+            "early_stopping": [False],
+            "max_iter": [3000],
         }
 
         results = grid_search(
