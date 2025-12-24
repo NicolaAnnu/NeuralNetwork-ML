@@ -42,13 +42,13 @@ if __name__ == "__main__":
 
     if args.gs:
         hyperparams = {
-            "hidden_layer_sizes": [(3,)],
+            "hidden_layer_sizes": [(4,)],
             "activation": ["tanh", "leaky_relu"],
-            "learning_rate": np.geomspace(0.01, 0.1, 4).tolist(),
-            "lam": np.concatenate(([0.0], np.logspace(-7, -4, 3))).tolist(),
-            "alpha": [0.0, 0.7, 0.9],
+            "learning_rate": [0.05, 0.07, 0.09],
+            "lam": [0.0, 0.00001, 0.0001],
+            "alpha": [0.0, 0.5, 0.7, 0.9],
             "tol": [1e-6],
-            "batch_size": [8, 16],
+            "batch_size": [8, 16, 32],
             "shuffle": [False, True],
             "early_stopping": [False, True],
             "max_iter": [2000],
@@ -59,7 +59,7 @@ if __name__ == "__main__":
             hyperparams=hyperparams,
             X=X_train,
             y=y_train,
-            k=10,
+            k=15,
             metric=accuracy_score,
             scale=False,
             address=args.dask,
@@ -75,10 +75,11 @@ if __name__ == "__main__":
 
     results = [r for r in results if np.isfinite(r["score"])]
     results = [r for r in results if np.isfinite(r["std"])]
-    best = sorted(results, key=lambda x: x["score"] - x["std"], reverse=True)[1]
+    best = sorted(results, key=lambda x: x["score"], reverse=True)[0]
     print(json.dumps(best["parameters"], indent=2))
-    print(f"best grid search score: {best['score']:.2f}")
-    print(f"best grid search std score: {best['std']:.2f}")
+    print(f"validation score: {best['score']:.2f}")
+    print(f"validation std score: {best['std']:.2f}")
+    print(f"validation loss: {best['loss']:.2f}")
 
     # re-train the model
     loss_limit = -np.inf
@@ -87,9 +88,7 @@ if __name__ == "__main__":
         params["early_stopping"] = False  # always disable it for retraining
         loss_limit = best["loss"]
 
-    params = best["parameters"]
     net = Classifier(**params)
-
     net.fit(X_train, y_train, loss_limit=loss_limit, X_val=X_test, y_val=y_test)
 
     print(f"converged in {len(net.loss_curve)} epochs")
@@ -122,8 +121,6 @@ if __name__ == "__main__":
     test_cm = confusion_matrix(y_test, y_pred)
     ConfusionMatrixDisplay(test_cm).plot()
     plt.show()
-
-    net.fit(X_train, y_train, X_val=X_test, y_val=y_test)
 
     plt.figure(figsize=(6, 5), dpi=150)
     plt.title("Loss Curve")
