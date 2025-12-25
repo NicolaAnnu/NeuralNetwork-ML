@@ -42,7 +42,7 @@ if __name__ == "__main__":
 
     if args.gs:
         hyperparams = {
-            "hidden_layer_sizes": [(4,)],
+            "hidden_layer_sizes": [(3,)],
             "activation": ["tanh", "leaky_relu"],
             "learning_rate": [0.05, 0.07, 0.09],
             "lam": [0.0, 0.00001, 0.0001],
