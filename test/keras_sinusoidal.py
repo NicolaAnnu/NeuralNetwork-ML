@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from keras.layers import Dense
+from keras.losses import MeanSquaredError
 from keras.models import Sequential
 from keras.optimizers import SGD
 from keras.regularizers import l2
@@ -26,11 +27,11 @@ assert isinstance(X_train, np.ndarray)
 # --- Parametri rete ---
 topology = (10,)
 activation = "tanh"
-learning_rate = 0.001
+learning_rate = 0.01
 momentum = 0.7
 lam = 0.0001
-batch_size = 10
-max_iter = 1000  # epoche
+batch_size = 32
+max_iter = 200  # epoche
 
 # --- Modello Keras ---
 model = Sequential()
@@ -46,11 +47,13 @@ model.add(
 # output layer lineare
 model.add(Dense(1, activation="linear"))
 
-optimizer = SGD(learning_rate=learning_rate, momentum=momentum)
-model.compile(optimizer=optimizer, loss="mse")
+model.compile(
+    optimizer=SGD(learning_rate=learning_rate, momentum=momentum),
+    loss=MeanSquaredError(),
+)
 
 # Fit
-history = model.fit(X_train, y_train, epochs=max_iter, batch_size=batch_size)
+history = model.fit(X_train, y_train, batch_size=batch_size, epochs=max_iter)
 
 # Loss curve
 plt.plot(history.history["loss"], label="Keras")
