@@ -4,7 +4,7 @@ import json
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import StandardScaler
 
 from neural.metrics import mean_euclidean_error
 from neural.network import Regressor
@@ -55,7 +55,7 @@ if __name__ == "__main__":
     # if --gs argument is passed the grid search is performed
     if args.gs:
         hyperparams = {
-            "hidden_layer_sizes": [(64, 32), (64, 64)],
+            "hidden_layer_sizes": [(64, 32), (64, 64), (128, 64)],
             "activation": ["relu", "leaky_relu"],
             "learning_rate": [0.01, 0.03, 0.05, 0.07],
             "lam": np.concatenate(([0.0], np.logspace(-6, -4, 3))).tolist(),
@@ -63,8 +63,8 @@ if __name__ == "__main__":
             "tol": [1e-5],
             "batch_size": [16, 32, 64, 128],
             "shuffle": [False, True],
-            "early_stopping": [True],
-            "max_iter": [2000],
+            "early_stopping": [False, True],
+            "max_iter": [3000],
         }
 
         results = grid_search(
@@ -85,26 +85,23 @@ if __name__ == "__main__":
     else:
         results = load_results("results/cup.json")
 
-    results = [r for r in results if (np.isfinite(r["score"]) and r["score"] < 40)]
-    results = [r for r in results if (np.isfinite(r["std"]) and r["std"] < 20)]
     best = sorted(results, key=lambda x: x["score"] + x["std"])[0]
     print(json.dumps(best["parameters"], indent=2))
     print(f"grid search score: {best['score']:.2f}")
     print(f"grid search std score: {best['std']:.2f}")
 
     # normalize train and test set
-    X_scaler = MinMaxScaler((-1, 1))
+    X_scaler = StandardScaler()
     X_train = X_scaler.fit_transform(X_train)
     X_test = np.asarray(X_scaler.transform(X_test))
 
-    y_scaler = MinMaxScaler((-1, 1))
+    y_scaler = StandardScaler()
     y_train = y_scaler.fit_transform(y_train)
     y_test = np.asarray(y_scaler.transform(y_test))
 
     # re-train the model
     loss_limit = -np.inf
     params = best["parameters"]
-    params["early_stopping"] = True
     if params["early_stopping"]:
         params["early_stopping"] = False  # always disable it for retraining
         loss_limit = best["loss"]
@@ -159,14 +156,14 @@ if __name__ == "__main__":
     plt.tight_layout()
     plt.show()
 
-    # plt.figure(figsize=(6, 5), dpi=150)
-    # plt.title("MEE Curve")
-    # plt.plot(net.err_curve, label="training")
-    # plt.plot(net.val_err_curve, label="test")
-    # plt.xlabel("Epochs")
-    # plt.ylabel("MEE")
-    # plt.legend()
-    # plt.tight_layout()
-    # plt.show()
+    plt.figure(figsize=(6, 5), dpi=150)
+    plt.title("MEE Curve")
+    plt.plot(net.err_curve, label="training")
+    plt.plot(net.val_err_curve, label="test")
+    plt.xlabel("Epochs")
+    plt.ylabel("MEE")
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
 
     target_plot(y_test, y_pred)
