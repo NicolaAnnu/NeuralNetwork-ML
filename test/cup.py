@@ -11,6 +11,28 @@ from neural.network import Regressor
 from neural.utils import dump_results, load_results, target_plot
 from neural.validation import grid_search
 
+
+def r2(y_true, y_pred):
+    mse_per_output = np.mean((y_true - y_pred) ** 2, axis=0)
+    var_per_output = np.var(y_true, axis=0)
+
+    return np.mean(1 - mse_per_output / var_per_output)
+
+
+def plot_curve(loss_curves, label):
+    max_len = max(len(curve) for curve in loss_curves)
+    loss_matrix = np.full((len(loss_curves), max_len), np.nan)
+    for i, curve in enumerate(loss_curves):
+        loss_matrix[i, : len(curve)] = curve
+
+    mean_loss = np.nanmean(loss_matrix, axis=0)
+    std_loss = np.nanstd(loss_matrix, axis=0)
+    epochs = np.arange(len(mean_loss))
+
+    plt.fill_between(epochs, mean_loss - std_loss, mean_loss + std_loss, alpha=0.25)
+    plt.plot(epochs, mean_loss, linewidth=1, label=label)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--gs", action="store_true", help="perform a grid search")
@@ -55,15 +77,16 @@ if __name__ == "__main__":
     # if --gs argument is passed the grid search is performed
     if args.gs:
         hyperparams = {
-            "hidden_layer_sizes": [(64, 32), (64, 64), (128, 64)],
-            "activation": ["relu", "leaky_relu"],
-            "learning_rate": [0.01, 0.03, 0.05, 0.07],
-            "lam": np.concatenate(([0.0], np.logspace(-6, -4, 3))).tolist(),
-            "alpha": [0.0, 0.7, 0.9],
+            "hidden_layer_sizes": [(64, 64), (64, 48, 32)],
+            "activation": ["leaky_relu"],
+            "learning_rate": [0.03, 0.05, 0.07],
+            "lam": np.concatenate(([0.0], np.logspace(-5, -4, 2))).tolist(),
+            "alpha": [0.7, 0.9],
             "tol": [1e-5],
-            "batch_size": [16, 32, 64, 128],
+            "batch_size": [64, 256, -1],
             "shuffle": [False, True],
-            "early_stopping": [False, True],
+            "early_stopping": [False],
+            "patience": [20, 50],
             "max_iter": [3000],
         }
 
@@ -85,19 +108,26 @@ if __name__ == "__main__":
     else:
         results = load_results("results/cup.json")
 
-    best = sorted(results, key=lambda x: x["score"] + x["std"])[0]
+    results = [r for r in results if r["score"] != -np.inf]
+    best = sorted(results, key=lambda x: x["score"])[0]
     print(json.dumps(best["parameters"], indent=2))
     print(f"grid search score: {best['score']:.2f}")
     print(f"grid search std score: {best['std']:.2f}")
 
-    # normalize train and test set
-    X_scaler = StandardScaler()
-    X_train = X_scaler.fit_transform(X_train)
-    X_test = np.asarray(X_scaler.transform(X_test))
+    loss_curves = []
+    val_loss_curves = []
+    err_curves = []
+    val_err_curves = []
+    losses = []
+    train_mees = []
+    train_r2s = []
+    test_mees = []
+    test_r2s = []
 
-    y_scaler = StandardScaler()
-    y_train = y_scaler.fit_transform(y_train)
-    y_test = np.asarray(y_scaler.transform(y_test))
+    X_train_raw = X_train.copy()
+    X_test_raw = X_test.copy()
+    y_train_raw = y_train.copy()
+    y_test_raw = y_test.copy()
 
     # re-train the model
     loss_limit = -np.inf
@@ -106,50 +136,51 @@ if __name__ == "__main__":
         params["early_stopping"] = False  # always disable it for retraining
         loss_limit = best["loss"]
 
-    net = Regressor(**params)
-    net.fit(X_train, y_train, loss_limit=loss_limit, X_val=X_test, y_val=y_test)
+    for _ in range(10):
+        # normalize train and test set
+        X_scaler = StandardScaler()
+        X_train = X_scaler.fit_transform(X_train_raw)
+        X_test = np.asarray(X_scaler.transform(X_test_raw))
 
-    print(f"converged in {len(net.loss_curve)} epochs")
-    print(f"loss: {net.loss:.3f}")
+        y_scaler = StandardScaler()
+        y_train = y_scaler.fit_transform(y_train_raw)
+        y_test = np.asarray(y_scaler.transform(y_test_raw))
 
-    # training
-    y_pred = net.predict(X_train)
-    y_train = y_scaler.inverse_transform(y_train)
-    y_pred = y_scaler.inverse_transform(y_pred)
-    train_score = mean_euclidean_error(y_train, y_pred)
-    print(f"train MEE: {train_score:.3f}")
+        net = Regressor(**params)
+        net.fit(X_train, y_train, loss_limit=loss_limit, X_val=X_test, y_val=y_test)
 
-    mse_per_output = np.mean((y_train - y_pred) ** 2, axis=0)
-    var_per_output = np.var(y_train, axis=0)
-    r2_per_output = 1 - mse_per_output / var_per_output
-    print(f"train R2: {np.mean(r2_per_output):.3f}")
+        loss_curves.append(net.loss_curve.copy())
+        val_loss_curves.append(net.val_loss_curve.copy())
+        err_curves.append(net.err_curve.copy())
+        val_err_curves.append(net.val_err_curve.copy())
+        losses.append(net.loss)
 
-    # test
-    y_pred = net.predict(X_test)
-    y_test = y_scaler.inverse_transform(y_test)
-    y_pred = y_scaler.inverse_transform(y_pred)
-    test_score = mean_euclidean_error(y_test, y_pred)
-    print(f"test MEE: {test_score:.3f}")
+        # training
+        y_pred = net.predict(X_train)
+        y_train = y_scaler.inverse_transform(y_train)
+        y_pred = y_scaler.inverse_transform(y_pred)
+        train_mees.append(mean_euclidean_error(y_train, y_pred))
+        train_r2s.append(r2(y_train, y_pred))
 
-    rmse_per_output = np.sqrt(np.mean((y_test - y_pred) ** 2, axis=0))
-    range_per_output = np.max(y_test, axis=0) - np.min(y_test, axis=0)
-    nrmse = np.mean(rmse_per_output / range_per_output)
-    print(f"mean NRMSE: {nrmse:.3f}")
+        # test
+        y_pred = net.predict(X_test)
+        y_test = y_scaler.inverse_transform(y_test)
+        y_pred = y_scaler.inverse_transform(y_pred)
+        test_mees.append(mean_euclidean_error(y_test, y_pred))
+        test_r2s.append(r2(y_test, y_pred))
 
-    std_per_output = np.std(y_test, axis=0)
-    print(f"std per output: {std_per_output}")
-    nrmse_std = np.mean(rmse_per_output / std_per_output)
-    print(f"mean NRMSE (std): {nrmse_std:.3f}")
-
-    mse_per_output = np.mean((y_test - y_pred) ** 2, axis=0)
-    var_per_output = np.var(y_test, axis=0)
-    r2_per_output = 1 - mse_per_output / var_per_output
-    print(f"test R2: {np.mean(r2_per_output):.3f}")
+    epochs = [len(lc) for lc in loss_curves]
+    print(f"mean convergence in {np.mean(epochs, dtype=int)} epochs")
+    print(f"mean loss: {np.mean(losses):.3f}")
+    print(f"mean train MEE: {np.mean(train_mees):.3f}")
+    print(f"mean train R2: {np.mean(train_r2s):.3f}")
+    print(f"mean test MEE: {np.mean(test_mees):.3f}")
+    print(f"mean test R2: {np.mean(test_r2s):.3f}")
 
     plt.figure(figsize=(6, 5), dpi=150)
     plt.title("Loss Curve")
-    plt.plot(net.loss_curve, label="training")
-    plt.plot(net.val_loss_curve, label="test")
+    plot_curve(loss_curves, "training")
+    plot_curve(val_loss_curves, "test")
     plt.xlabel("Epochs")
     plt.ylabel("Loss")
     plt.legend()
@@ -158,8 +189,8 @@ if __name__ == "__main__":
 
     plt.figure(figsize=(6, 5), dpi=150)
     plt.title("MEE Curve")
-    plt.plot(net.err_curve, label="training")
-    plt.plot(net.val_err_curve, label="test")
+    plot_curve(err_curves, label="training")
+    plot_curve(val_err_curves, label="test")
     plt.xlabel("Epochs")
     plt.ylabel("MEE")
     plt.legend()
