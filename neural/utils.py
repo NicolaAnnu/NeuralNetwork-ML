@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 def dump_results(filepath: str, results: list[dict]):
@@ -21,6 +22,20 @@ def dump_results(filepath: str, results: list[dict]):
 def load_results(filepath: str) -> list[dict]:
     with open(filepath, "r") as fp:
         return json.load(fp)
+
+
+def plot_curve(loss_curves, label):
+    max_len = max(len(curve) for curve in loss_curves)
+    loss_matrix = np.full((len(loss_curves), max_len), np.nan)
+    for i, curve in enumerate(loss_curves):
+        loss_matrix[i, : len(curve)] = curve
+
+    mean_loss = np.nanmean(loss_matrix, axis=0)
+    std_loss = np.nanstd(loss_matrix, axis=0)
+    epochs = np.arange(len(mean_loss))
+
+    plt.fill_between(epochs, mean_loss - std_loss, mean_loss + std_loss, alpha=0.25)
+    plt.plot(epochs, mean_loss, label=label)
 
 
 def target_plot(y_true, y_pred):

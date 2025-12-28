@@ -2,19 +2,17 @@ from copy import deepcopy
 
 import numpy as np
 import pandas as pd
-from sklearn.metrics import mean_squared_error
 
 
 def mean_euclidean_error(y_true, y_pred):
     return np.mean(np.linalg.norm(y_true - y_pred, axis=1))
 
 
-def neg_mean_euclidean_error(y_true, y_pred):
-    return -np.mean(np.linalg.norm(y_true - y_pred, axis=1))
+def r2(y_true, y_pred):
+    mse_per_output = np.mean((y_true - y_pred) ** 2, axis=0)
+    var_per_output = np.var(y_true, axis=0)
 
-
-def neg_mean_squared_error(y_true, y_pred):
-    return -mean_squared_error(y_true, y_pred)
+    return np.mean(1 - mse_per_output / var_per_output)
 
 
 class Metrics:

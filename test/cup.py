@@ -6,32 +6,10 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
-from neural.metrics import mean_euclidean_error
+from neural.metrics import mean_euclidean_error, r2
 from neural.network import Regressor
-from neural.utils import dump_results, load_results, target_plot
+from neural.utils import dump_results, load_results, plot_curve, target_plot
 from neural.validation import grid_search
-
-
-def r2(y_true, y_pred):
-    mse_per_output = np.mean((y_true - y_pred) ** 2, axis=0)
-    var_per_output = np.var(y_true, axis=0)
-
-    return np.mean(1 - mse_per_output / var_per_output)
-
-
-def plot_curve(loss_curves, label):
-    max_len = max(len(curve) for curve in loss_curves)
-    loss_matrix = np.full((len(loss_curves), max_len), np.nan)
-    for i, curve in enumerate(loss_curves):
-        loss_matrix[i, : len(curve)] = curve
-
-    mean_loss = np.nanmean(loss_matrix, axis=0)
-    std_loss = np.nanstd(loss_matrix, axis=0)
-    epochs = np.arange(len(mean_loss))
-
-    plt.fill_between(epochs, mean_loss - std_loss, mean_loss + std_loss, alpha=0.25)
-    plt.plot(epochs, mean_loss, linewidth=1, label=label)
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -110,7 +88,6 @@ if __name__ == "__main__":
 
     results = [r for r in results if r["score"] != -np.inf]
     best = sorted(results, key=lambda x: x["score"])[0]
-    print(json.dumps(best["parameters"], indent=2))
     print(f"grid search score: {best['score']:.2f}")
     print(f"grid search std score: {best['std']:.2f}")
 
@@ -135,6 +112,8 @@ if __name__ == "__main__":
     if params["early_stopping"]:
         params["early_stopping"] = False  # always disable it for retraining
         loss_limit = best["loss"]
+
+    print(json.dumps(params, indent=2))
 
     for _ in range(10):
         # normalize train and test set
