@@ -4,7 +4,7 @@ import json
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import MinMaxScaler
 
 from neural.metrics import mean_euclidean_error
 from neural.network import Regressor
@@ -97,11 +97,11 @@ if __name__ == "__main__":
     print(f"grid search std score: {best['std']:.2f}")
 
     # normalize train and test set
-    X_scaler = StandardScaler()
+    X_scaler = MinMaxScaler((-1, 1))
     X_train = X_scaler.fit_transform(X_train)
     X_test = np.asarray(X_scaler.transform(X_test))
 
-    y_scaler = StandardScaler()
+    y_scaler = MinMaxScaler((-1, 1))
     y_train = y_scaler.fit_transform(y_train)
     y_test = np.asarray(y_scaler.transform(y_test))
 
@@ -158,6 +158,16 @@ if __name__ == "__main__":
     plt.plot(net.val_loss_curve, label="test")
     plt.xlabel("Epochs")
     plt.ylabel("Loss")
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+    plt.figure(figsize=(6, 5), dpi=150)
+    plt.title("MEE Curve")
+    plt.plot(net.err_curve, label="training")
+    plt.plot(net.val_err_curve, label="test")
+    plt.xlabel("Epochs")
+    plt.ylabel("MEE")
     plt.legend()
     plt.tight_layout()
     plt.show()
