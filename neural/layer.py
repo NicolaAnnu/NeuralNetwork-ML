@@ -30,8 +30,8 @@ class Layer:
         self.b = np.zeros(self.units)
 
         # for momentum
-        self.old_delta_w = np.zeros_like(self.W)
-        self.old_delta_b = np.zeros_like(self.b)
+        self.momentum_w = np.zeros_like(self.W)
+        self.momentum_b = np.zeros_like(self.b)
 
     def store_best(self) -> None:
         self.best_W = self.W.copy()
@@ -65,15 +65,11 @@ class Layer:
         penalty = 2 * self.lam * self.W
 
         # momentum terms
-        momentum_w = self.alpha * self.old_delta_w
-        momentum_b = self.alpha * self.old_delta_b
+        self.momentum_w = self.alpha * self.momentum_w + delta_w
+        self.momentum_b = self.alpha * self.momentum_b + delta_b
 
         # update weights and bias
-        self.W -= delta_w + momentum_w + penalty
-        self.b -= delta_b + momentum_b
-
-        # memorize scaled gradients for next momentum
-        self.old_delta_w = delta_w
-        self.old_delta_b = delta_b
+        self.W -= self.momentum_w + penalty
+        self.b -= self.momentum_b
 
         return delta_out

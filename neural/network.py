@@ -77,7 +77,7 @@ class Network:
 
         best_loss = np.inf
         stop_counter = 0
-        patience = 50
+        patience = 20
 
         if self.early_stopping:
             es_counter = 0
