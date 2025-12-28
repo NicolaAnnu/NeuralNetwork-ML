@@ -55,20 +55,16 @@ if __name__ == "__main__":
     # if --gs argument is passed the grid search is performed
     if args.gs:
         hyperparams = {
-            "hidden_layer_sizes": [
-                (64, 64),
-                (64, 48, 32),
-                (64, 64, 64),
-            ],
+            "hidden_layer_sizes": [(64, 32), (64, 64)],
             "activation": ["relu", "leaky_relu"],
-            "learning_rate": [0.05, 0.07, 0.09],
-            "lam": np.concatenate(([0.0], np.logspace(-7, -4, 4))).tolist(),
-            "alpha": [0.7, 0.9],
-            "tol": [1e-6],
-            "batch_size": [16, 32, 64],
-            "shuffle": [True],
-            "early_stopping": [False, True],
-            "max_iter": [3000],
+            "learning_rate": [0.01, 0.03, 0.05, 0.07],
+            "lam": np.concatenate(([0.0], np.logspace(-6, -4, 3))).tolist(),
+            "alpha": [0.0, 0.7, 0.9],
+            "tol": [1e-5],
+            "batch_size": [16, 32, 64, 128],
+            "shuffle": [False, True],
+            "early_stopping": [True],
+            "max_iter": [2000],
         }
 
         results = grid_search(
@@ -108,6 +104,7 @@ if __name__ == "__main__":
     # re-train the model
     loss_limit = -np.inf
     params = best["parameters"]
+    params["early_stopping"] = True
     if params["early_stopping"]:
         params["early_stopping"] = False  # always disable it for retraining
         loss_limit = best["loss"]
@@ -162,14 +159,14 @@ if __name__ == "__main__":
     plt.tight_layout()
     plt.show()
 
-    plt.figure(figsize=(6, 5), dpi=150)
-    plt.title("MEE Curve")
-    plt.plot(net.err_curve, label="training")
-    plt.plot(net.val_err_curve, label="test")
-    plt.xlabel("Epochs")
-    plt.ylabel("MEE")
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
+    # plt.figure(figsize=(6, 5), dpi=150)
+    # plt.title("MEE Curve")
+    # plt.plot(net.err_curve, label="training")
+    # plt.plot(net.val_err_curve, label="test")
+    # plt.xlabel("Epochs")
+    # plt.ylabel("MEE")
+    # plt.legend()
+    # plt.tight_layout()
+    # plt.show()
 
     target_plot(y_test, y_pred)
