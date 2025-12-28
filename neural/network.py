@@ -17,6 +17,7 @@ class Network:
         batch_size: int = 10,
         shuffle: bool = False,
         early_stopping: bool = False,
+        patience: int = 10,
         max_iter: int = 200,
     ) -> None:
         self.hidden_layer_sizes = hidden_layer_sizes
@@ -39,6 +40,7 @@ class Network:
         self.batch_size = batch_size
         self.shuffle = shuffle
         self.early_stopping = early_stopping
+        self.patience = patience
         self.max_iter = max_iter
 
     def init_weights(self, input_size):
@@ -81,7 +83,6 @@ class Network:
 
         best_loss = np.inf
         stop_counter = 0
-        patience = 20
 
         if self.early_stopping:
             es_counter = 0
@@ -127,13 +128,13 @@ class Network:
                 else:
                     es_counter += 1
 
-                if es_counter == patience:
+                if es_counter == self.patience:
                     # restore best weigths for each layer
                     for l in self.layers:
                         l.load_best()
 
                     # cut loss curves at best epoch
-                    best_epoch = len(self.loss_curve) - patience
+                    best_epoch = len(self.loss_curve) - self.patience
 
                     self.loss_curve = self.loss_curve[:best_epoch]
                     self.val_loss_curve = self.val_loss_curve[:best_epoch]
@@ -150,7 +151,7 @@ class Network:
                     best_loss = self.loss_curve[-1]
                     stop_counter = 0
 
-                if stop_counter == patience:
+                if stop_counter == self.patience:
                     break
 
     @property
@@ -170,6 +171,7 @@ class Classifier(Network):
         batch_size: int = 10,
         shuffle: bool = False,
         early_stopping: bool = False,
+        patience: int = 10,
         max_iter: int = 200,
     ) -> None:
         super().__init__(
@@ -182,6 +184,7 @@ class Classifier(Network):
             batch_size=batch_size,
             shuffle=shuffle,
             early_stopping=early_stopping,
+            patience=patience,
             max_iter=max_iter,
         )
 
@@ -226,6 +229,7 @@ class Regressor(Network):
         batch_size: int = 10,
         shuffle: bool = False,
         early_stopping: bool = False,
+        patience: int = 10,
         max_iter: int = 200,
     ) -> None:
         super().__init__(
@@ -238,6 +242,7 @@ class Regressor(Network):
             batch_size=batch_size,
             shuffle=shuffle,
             early_stopping=early_stopping,
+            patience=patience,
             max_iter=max_iter,
         )
 
