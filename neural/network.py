@@ -1,6 +1,8 @@
 import numpy as np
+from sklearn.metrics import accuracy_score
 
 from neural.layer import Layer
+from neural.metrics import mean_euclidean_error
 
 
 class Network:
@@ -74,6 +76,8 @@ class Network:
 
         self.loss_curve = []
         self.val_loss_curve = []
+        self.err_curve = []
+        self.val_err_curve = []
 
         best_loss = np.inf
         stop_counter = 0
@@ -99,6 +103,7 @@ class Network:
             # epoch loss and accuracy
             out = self.forward(X)
             self.loss_curve.append(np.mean((out - y) ** 2))
+            self.err_curve.append(self.error(y, out))
 
             # check if loss limit is reached
             if self.loss_curve[-1] < loss_limit:
@@ -108,12 +113,15 @@ class Network:
             if X_val is not None:
                 out = self.forward(X_val)
                 self.val_loss_curve.append(np.mean((out - y_val) ** 2))
+                self.val_err_curve.append(self.error(y_val, out))
 
             # early stopping
             if self.early_stopping:
                 if self.val_loss_curve[-1] < best_val_loss:
                     best_val_loss = self.val_loss_curve[-1]
                     es_counter = 0
+
+                    # store best weights for each layer
                     for l in self.layers:
                         l.store_best()
                 else:
@@ -126,8 +134,12 @@ class Network:
 
                     # cut loss curves at best epoch
                     best_epoch = len(self.loss_curve) - patience
+
                     self.loss_curve = self.loss_curve[:best_epoch]
                     self.val_loss_curve = self.val_loss_curve[:best_epoch]
+                    self.err_curve = self.loss_curve[:best_epoch]
+                    self.val_err_curve = self.val_loss_curve[:best_epoch]
+
                     break
 
             # stopping criteria (loss not improving)
@@ -191,6 +203,9 @@ class Classifier(Network):
         )
         self.layers.append(output)
 
+        # error function
+        self.error = accuracy_score
+
         # temporary
         y_val2 = None if y_val is None else y_val.reshape(-1, 1)
         super().fit(X, y.reshape(-1, 1), loss_limit, X_val, y_val2)
@@ -246,6 +261,9 @@ class Regressor(Network):
             alpha=self.alpha,
         )
         self.layers.append(output)
+
+        # error function
+        self.error = mean_euclidean_error
 
         super().fit(X, y, loss_limit, X_val, y_val)
 
