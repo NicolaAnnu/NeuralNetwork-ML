@@ -4,7 +4,7 @@ from itertools import product
 import numpy as np
 from dask.delayed import delayed
 from dask.distributed import Client, progress
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import StandardScaler
 
 
 def kfold(n, k):
@@ -46,11 +46,11 @@ def train_and_score(
         y_train = y[~mask]
 
         if scale:
-            X_scaler = MinMaxScaler((-1, 1))
+            X_scaler = StandardScaler()
             X_train = X_scaler.fit_transform(X_train)
             X_val = X_scaler.transform(X_val)
 
-            y_scaler = MinMaxScaler((-1, 1))
+            y_scaler = StandardScaler()
             y_train = y_scaler.fit_transform(y_train)
             y_val = y_scaler.transform(y_val)
 
