@@ -55,15 +55,15 @@ if __name__ == "__main__":
     # if --gs argument is passed the grid search is performed
     if args.gs:
         hyperparams = {
-            "hidden_layer_sizes": [(64, 64), (64, 48, 32)],
-            "activation": ["leaky_relu"],
+            "hidden_layer_sizes": [(64, 64, 64), (64, 48, 32)],
+            "activation": ["relu", "leaky_relu"],
             "learning_rate": [0.03, 0.05, 0.07],
             "lam": np.concatenate(([0.0], np.logspace(-5, -4, 2))).tolist(),
             "alpha": [0.7, 0.9],
             "tol": [1e-5],
-            "batch_size": [64, 256, -1],
+            "batch_size": [16, 32],
             "shuffle": [False, True],
-            "early_stopping": [False],
+            "early_stopping": [False, True],
             "patience": [20, 50],
             "max_iter": [3000],
         }
@@ -115,7 +115,7 @@ if __name__ == "__main__":
 
     print(json.dumps(params, indent=2))
 
-    for _ in range(10):
+    for _ in range(3):
         # normalize train and test set
         X_scaler = StandardScaler()
         X_train = X_scaler.fit_transform(X_train_raw)

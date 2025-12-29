@@ -104,7 +104,9 @@ class Network:
             # epoch loss and accuracy
             out = self.forward(X)
             self.loss_curve.append(np.mean((out - y) ** 2))
-            self.err_curve.append(self.error(y, out))
+
+            pred = self.predict(X)
+            self.err_curve.append(self.error(y, pred))
 
             # check if loss limit is reached
             if self.loss_curve[-1] < loss_limit:
@@ -114,7 +116,9 @@ class Network:
             if X_val is not None:
                 out = self.forward(X_val)
                 self.val_loss_curve.append(np.mean((out - y_val) ** 2))
-                self.val_err_curve.append(self.error(y_val, out))
+
+                pred = self.predict(X_val)
+                self.val_err_curve.append(self.error(y_val, pred))
 
             # early stopping
             if self.early_stopping:
