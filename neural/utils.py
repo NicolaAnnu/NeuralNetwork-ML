@@ -51,7 +51,7 @@ def retrain(model, params, X_train, y_train, loss_limit, X_test, y_test, n, addr
     results = client.gather(futures)
     client.close()
 
-    return list(results)
+    return results
 
 
 def plot_curve(loss_curves, label):
