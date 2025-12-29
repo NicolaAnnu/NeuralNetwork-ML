@@ -90,6 +90,7 @@ if __name__ == "__main__":
     best = sorted(results, key=lambda x: x["score"] + x["std"])[0]
     print(f"grid search score: {best['score']:.2f}")
     print(f"grid search std score: {best['std']:.2f}")
+    print(f"grid search loss: {best['loss']:.2f}")
 
     loss_curves = []
     val_loss_curves = []
@@ -104,11 +105,12 @@ if __name__ == "__main__":
     # re-train the model
     loss_limit = -np.inf
     params = best["parameters"]
+    params["patience"] = 50
+    print(json.dumps(params, indent=2))
+
     if params["early_stopping"]:
         params["early_stopping"] = False  # always disable it for retraining
         loss_limit = best["loss"]
-
-    print(json.dumps(params, indent=2))
 
     X_scaler = StandardScaler()
     X_train = X_scaler.fit_transform(X_train)
@@ -161,6 +163,7 @@ if __name__ == "__main__":
     plt.xlabel("Epochs")
     plt.ylabel("Loss")
     plt.legend()
+    plt.grid()
     plt.tight_layout()
     plt.show()
 
@@ -171,7 +174,8 @@ if __name__ == "__main__":
     plt.xlabel("Epochs")
     plt.ylabel("MEE")
     plt.legend()
+    plt.grid()
     plt.tight_layout()
     plt.show()
 
-    target_plot(y_test, y_pred)
+    target_plot(y_test_raw, y_pred)
