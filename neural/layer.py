@@ -19,7 +19,10 @@ class Layer:
         self.alpha = alpha
 
     def init_weights(self, n: int) -> None:
-        if self.activation == activations["relu"]:
+        if (
+            self.activation == activations["relu"]
+            or self.activation == activations["leaky_relu"]
+        ):
             # He initialization
             self.W = np.random.normal(0, np.sqrt(2 / n), (n, self.units))
         else:
