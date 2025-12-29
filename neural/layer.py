@@ -1,38 +1,28 @@
 import numpy as np
 
-from neural.activations import activations
+from neural.activations import Activation
 
 
 class Layer:
     def __init__(
         self,
         units: int,
-        activation: str = "logistic",
-        learning_rate: float = 0.01,
-        lam: float = 0.0001,
-        alpha: float = 0.5,
+        activation: Activation,
+        learning_rate: float,
+        lam: float,
+        alpha: float,
     ) -> None:
         self.units = units
-        self.activation = activations[activation]
+        self.activation = activation
         self.learning_rate = learning_rate
         self.lam = lam
         self.alpha = alpha
 
     def init_weights(self, n: int) -> None:
-        if (
-            self.activation == activations["relu"]
-            or self.activation == activations["leaky_relu"]
-        ):
-            # He initialization
-            self.W = np.random.normal(0, np.sqrt(2 / n), (n, self.units))
-        else:
-            # Glorot-Xavier initialization
-            limit = 1 / np.sqrt(n)
-            self.W = np.random.uniform(-limit, limit, (n, self.units))
-
+        self.W = self.activation.init_weights(n, self.units)
         self.b = np.zeros(self.units)
 
-        # for momentum
+        # init momentum
         self.momentum_w = np.zeros_like(self.W)
         self.momentum_b = np.zeros_like(self.b)
 
@@ -48,10 +38,10 @@ class Layer:
         self.out = X
         self.net = X @ self.W + self.b
 
-        return self.activation[0](self.net)
+        return self.activation(self.net)
 
     def backward(self, dloss: np.ndarray) -> np.ndarray:
-        delta = dloss * self.activation[1](self.net)
+        delta = dloss * self.activation.derivative(self.net)
 
         # compute the delta for the previous layer
         delta_out = delta @ self.W.T

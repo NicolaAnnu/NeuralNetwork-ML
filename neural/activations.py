@@ -1,56 +1,91 @@
+from typing import Protocol
+
 import numpy as np
 
 
-# logistic
-def logistic(x):
-    return 1 / (1 + np.exp(-x))
+class Activation(Protocol):
+    def __call__(self, x: np.ndarray) -> np.ndarray: ...
+
+    def derivative(self, x: np.ndarray) -> np.ndarray: ...
+
+    def init_weights(self, fan_in: int, fan_out: int) -> np.ndarray: ...
 
 
-def logistic_d(x):
-    x1 = logistic(x)
-    return x1 * (1 - x1)
+class Linear(Activation):
+    def __call__(self, x: np.ndarray) -> np.ndarray:
+        return x
+
+    def derivative(self, x: np.ndarray) -> np.ndarray:
+        return np.ones_like(x)
+
+    def init_weights(self, fan_in: int, fan_out: int) -> np.ndarray:
+        limit = 1 / np.sqrt(fan_in)
+        return np.random.uniform(-limit, limit, (fan_in, fan_out))
 
 
-def tanh_d(x):
-    return 1 - np.tanh(x) ** 2
+class Logistic(Activation):
+    def __call__(self, x: np.ndarray) -> np.ndarray:
+        return 1 / (1 + np.exp(-x))
+
+    def derivative(self, x: np.ndarray) -> np.ndarray:
+        x1 = self(x)
+        return x1 * (1 - x1)
+
+    def init_weights(self, fan_in: int, fan_out: int) -> np.ndarray:
+        limit = 1 / np.sqrt(fan_in)
+        return np.random.uniform(-limit, limit, (fan_in, fan_out))
 
 
-def relu(x):
-    return np.maximum(0, x)
+class Tanh(Activation):
+    def __call__(self, x: np.ndarray) -> np.ndarray:
+        return np.tanh(x)
+
+    def derivative(self, x: np.ndarray) -> np.ndarray:
+        return 1 - np.tanh(x) ** 2
+
+    def init_weights(self, fan_in: int, fan_out: int) -> np.ndarray:
+        limit = 1 / np.sqrt(fan_in)
+        return np.random.uniform(-limit, limit, (fan_in, fan_out))
 
 
-def relu_d(x):
-    return (x > 0).astype(float)
+class Relu(Activation):
+    def __call__(self, x: np.ndarray) -> np.ndarray:
+        return np.maximum(0, x)
+
+    def derivative(self, x: np.ndarray) -> np.ndarray:
+        return (x > 0).astype(float)
+
+    def init_weights(self, fan_in: int, fan_out: int) -> np.ndarray:
+        return np.random.normal(0, np.sqrt(2 / fan_in), (fan_in, fan_out))
 
 
-def leaky_relu(x):
-    return np.where(x > 0, x, 0.01 * x)
+class LeakyRelu(Activation):
+    def __call__(self, x: np.ndarray) -> np.ndarray:
+        return np.where(x > 0, x, 0.01 * x)
+
+    def derivative(self, x: np.ndarray) -> np.ndarray:
+        return np.where(x > 0, 1, 0.01)
+
+    def init_weights(self, fan_in: int, fan_out: int) -> np.ndarray:
+        return np.random.normal(0, np.sqrt(2 / fan_in), (fan_in, fan_out))
 
 
-def leaky_relu_d(x):
-    return np.where(x > 0, 1, 0.01)
+class Elu(Activation):
+    def __call__(self, x: np.ndarray) -> np.ndarray:
+        return np.where(x > 0, x, np.exp(x) - 1)
 
+    def derivative(self, x: np.ndarray) -> np.ndarray:
+        return np.where(x > 0, 1.0, np.exp(x))
 
-def elu(x):
-    x = np.asarray(x)
-    return np.where(x > 0, x, np.exp(x) - 1)
+    def init_weights(self, fan_in: int, fan_out: int) -> np.ndarray:
+        return np.random.normal(0, np.sqrt(2 / fan_in), (fan_in, fan_out))
 
-
-def elu_d(x):
-    x = np.asarray(x)
-    return np.where(x > 0, 1.0, np.exp(x))
-
-
-# dictionary of activation functions
-# every field returns a tuple with
-# 1. the activation function
-# 2. its derivative
 
 activations = {
-    "linear": (lambda x: x, lambda x: np.ones_like(x)),
-    "logistic": (logistic, logistic_d),
-    "tanh": (np.tanh, tanh_d),
-    "relu": (relu, relu_d),
-    "leaky_relu": (leaky_relu, leaky_relu_d),
-    "elu": (elu, elu_d),
+    "linear": Linear(),
+    "logistic": Logistic(),
+    "tanh": Tanh(),
+    "relu": Relu(),
+    "leaky_relu": LeakyRelu(),
+    "elu": Elu(),
 }

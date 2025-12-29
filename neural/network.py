@@ -1,6 +1,7 @@
 import numpy as np
 from sklearn.metrics import accuracy_score
 
+from neural.activations import activations
 from neural.layer import Layer
 from neural.metrics import mean_euclidean_error
 
@@ -11,8 +12,8 @@ class Network:
         hidden_layer_sizes=(100,),
         activation: str = "logistic",
         learning_rate: float = 0.01,
-        lam: float = 0.0001,  # regularization
-        alpha: float = 0.5,  # momentum
+        lam: float = 0.0001,
+        alpha: float = 0.5,
         tol: float = 1e-5,
         batch_size: int = 10,
         shuffle: bool = False,
@@ -24,7 +25,7 @@ class Network:
         self.layers = [
             Layer(
                 units=units,
-                activation=activation,
+                activation=activations[activation],
                 learning_rate=learning_rate,
                 lam=lam,
                 alpha=alpha,
@@ -203,7 +204,7 @@ class Classifier(Network):
         # add output layer with one logistic unit
         output = Layer(
             units=1,
-            activation="logistic",
+            activation=activations["logistic"],
             learning_rate=self.learning_rate,
             lam=self.lam,
             alpha=self.alpha,
@@ -264,7 +265,7 @@ class Regressor(Network):
         # add the output layer with
         output = Layer(
             units=n_outputs,
-            activation="linear",
+            activation=activations["linear"],
             learning_rate=self.learning_rate,
             lam=self.lam,
             alpha=self.alpha,
