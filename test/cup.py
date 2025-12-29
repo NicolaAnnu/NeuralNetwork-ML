@@ -57,9 +57,9 @@ if __name__ == "__main__":
         hyperparams = {
             "hidden_layer_sizes": [(64, 64, 64)],
             "activation": ["leaky_relu"],
-            "learning_rate": [0.05],
-            "lam": [0.0001],
-            "alpha": [0.7],
+            "learning_rate": [0.03, 0.05, 0.07],
+            "lam": [0.0, 0.00001, 0.0001],
+            "alpha": [0.9],
             "tol": [1e-5],
             "batch_size": [8, 16, 32],
             "shuffle": [False, True],
@@ -87,7 +87,7 @@ if __name__ == "__main__":
         results = load_results("results/cup.json")
 
     results = [r for r in results if r["score"] != -np.inf]
-    best = sorted(results, key=lambda x: x["score"])[0]
+    best = sorted(results, key=lambda x: x["score"] + x["std"])[0]
     print(f"grid search score: {best['score']:.2f}")
     print(f"grid search std score: {best['std']:.2f}")
 
@@ -148,7 +148,10 @@ if __name__ == "__main__":
     print(f"mean loss: {np.mean(losses):.3f}")
     print(f"mean train MEE: {np.mean(train_mees):.3f}")
     print(f"mean train R2: {np.mean(train_r2s):.3f}")
+
+    print(f"min test MEE: {np.min(test_mees):.3f}")
     print(f"mean test MEE: {np.mean(test_mees):.3f}")
+    print(f"max test MEE: {np.max(test_mees):.3f}")
     print(f"mean test R2: {np.mean(test_r2s):.3f}")
 
     plt.figure(figsize=(6, 5), dpi=150)
