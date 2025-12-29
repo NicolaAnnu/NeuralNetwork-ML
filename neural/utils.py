@@ -3,6 +3,8 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+from dask.delayed import delayed
+from dask.distributed import Client, progress
 
 
 def dump_results(filepath: str, results: list[dict]):
@@ -22,6 +24,34 @@ def dump_results(filepath: str, results: list[dict]):
 def load_results(filepath: str) -> list[dict]:
     with open(filepath, "r") as fp:
         return json.load(fp)
+
+
+def retrain(model, params, X_train, y_train, loss_limit, X_test, y_test, n, address):
+    def fit(net, X_train, y_train, loss_limit, X_test, y_test):
+        net.fit(X_train, y_train, loss_limit, X_test, y_test)
+        return net
+
+    # dask init
+    # dask init
+    if address:
+        client = Client(address)
+    else:
+        client = Client()
+
+    print(f"dask dashboard: {client.dashboard_link}")
+
+    nets = [model(**params) for _ in range(n)]
+    tasks = [
+        delayed(fit)(net, X_train, y_train, loss_limit, X_test, y_test) for net in nets
+    ]
+
+    # perform parallel k-folds
+    futures = client.compute(tasks)
+    progress(futures)
+    results = client.gather(futures)
+    client.close()
+
+    return list(results)
 
 
 def plot_curve(loss_curves, label):
