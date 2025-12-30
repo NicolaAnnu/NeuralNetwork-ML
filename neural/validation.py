@@ -4,7 +4,7 @@ from typing import Type
 
 import numpy as np
 from dask.delayed import delayed
-from dask.distributed import Client, progress
+from dask.distributed import Client, as_completed, progress
 from sklearn.preprocessing import StandardScaler
 
 from neural.network import Network
@@ -127,7 +127,11 @@ def grid_search(
     futures = client.compute(tasks)
     if verbose:
         progress(futures)
-    results = client.gather(futures)
+
+    results = []
+    for future in as_completed(futures):
+        results.append(future.result())
+        client.cancel(future)
     end = time.perf_counter()
     client.close()
 
