@@ -13,7 +13,8 @@ class Layer:
         alpha: float = 0.5,
     ) -> None:
         self.units = units
-        self.activation = activations[activation]
+        Activation = activations[activation]
+        self.activation = Activation()
         self.learning_rate = learning_rate
         self.lam = lam
         self.alpha = alpha
