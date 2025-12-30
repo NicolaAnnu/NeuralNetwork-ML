@@ -42,15 +42,15 @@ if __name__ == "__main__":
 
     if args.gs:
         hyperparams = {
-            "hidden_layer_sizes": [(3,)],
+            "hidden_layer_sizes": [(3,), (4,)],
             "activation": ["tanh", "leaky_relu"],
-            "learning_rate": [0.05, 0.07, 0.09],
+            "learning_rate": [0.01, 0.03, 0.05, 0.07],
             "lam": [0.0, 0.00001, 0.0001],
             "alpha": [0.0, 0.5, 0.7, 0.9],
-            "tol": [1e-6],
-            "batch_size": [8, 16, 32],
             "shuffle": [False, True],
-            "early_stopping": [False, True],
+            "batch_size": [8, 16, 32],
+            "stopping_criteria": ["early_stopping"],
+            "patience": [10, 20, 50],
             "max_iter": [2000],
         }
 
@@ -81,15 +81,16 @@ if __name__ == "__main__":
     print(f"validation std score: {best['std']:.2f}")
     print(f"validation loss: {best['loss']:.2f}")
 
-    # re-train the model
-    loss_limit = -np.inf
     params = best["parameters"]
-    if params["early_stopping"]:
-        params["early_stopping"] = False  # always disable it for retraining
-        loss_limit = best["loss"]
 
+    # if the model used early stopping now stops on same loss found in validation
+    params["limit"] = (
+        best["loss"] if params["stopping_criteria"] == "early_stopping" else -np.inf
+    )
+
+    # re-train the model
     net = Classifier(**params)
-    net.fit(X_train, y_train, loss_limit=loss_limit, X_val=X_test, y_val=y_test)
+    net.fit(X_train, y_train, accuracy_score, X_val=X_test, y_val=y_test)
 
     print(f"converged in {len(net.loss_curve)} epochs")
     print(f"loss: {net.loss:.3f}")
@@ -134,8 +135,8 @@ if __name__ == "__main__":
 
     plt.figure(figsize=(6, 5), dpi=150)
     plt.title("Accuracy Curve")
-    plt.plot(net.err_curve, label="training")
-    plt.plot(net.val_err_curve, label="test")
+    plt.plot(net.score_curve, label="training")
+    plt.plot(net.val_score_curve, label="test")
     plt.xlabel("Epochs")
     plt.ylabel("Accuracy")
     plt.legend()
