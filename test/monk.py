@@ -43,14 +43,14 @@ if __name__ == "__main__":
     if args.gs:
         hyperparams = {
             "hidden_layer_sizes": [(3,), (4,)],
-            "activation": ["tanh", "leaky_relu"],
-            "learning_rate": [0.01, 0.03, 0.05, 0.07],
-            "lam": [0.0, 0.00001, 0.0001],
-            "alpha": [0.0, 0.5, 0.7, 0.9],
+            "activation": ["tanh"],
+            "learning_rate": [0.01, 0.03, 0.05],
+            "lam": [0.00001, 0.0001],
+            "alpha": [0.0, 0.7, 0.9],
             "shuffle": [False, True],
-            "batch_size": [8, 16, 32],
-            "stopping_criteria": ["early_stopping"],
-            "patience": [10, 20, 50],
+            "batch_size": [8, 16],
+            "convergence": ["loss_convergence"],
+            "patience": [20],
             "max_iter": [2000],
         }
 
@@ -85,7 +85,7 @@ if __name__ == "__main__":
 
     # if the model used early stopping now stops on same loss found in validation
     params["limit"] = (
-        best["loss"] if params["stopping_criteria"] == "early_stopping" else -np.inf
+        best["loss"] if params["convergence"] == "early_stopping" else -np.inf
     )
 
     # re-train the model

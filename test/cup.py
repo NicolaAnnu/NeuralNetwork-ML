@@ -56,7 +56,7 @@ if __name__ == "__main__":
         alpha=0.9,
         shuffle=True,
         batch_size=64,
-        stopping_criteria="early_stopping",
+        convergence="early_stopping",
         patience=50,
         limit=-np.inf,
         max_iter=2000,
