@@ -1,7 +1,7 @@
 import numpy as np
 
+from neural.convergence import methods
 from neural.layer import Layer
-from neural.stopping_criteria import stopping_criterias
 
 
 class Network:
@@ -14,7 +14,7 @@ class Network:
         alpha: float = 0.5,
         shuffle: bool = False,
         batch_size: int = 64,
-        stopping_criteria: str = "loss_convergence",
+        convergence: str = "loss_convergence",
         patience: int = 10,
         limit: float = -np.inf,
         max_iter: int = 500,
@@ -38,8 +38,8 @@ class Network:
         self.shuffle = shuffle
         self.batch_size = batch_size
 
-        criteria = stopping_criterias[stopping_criteria]
-        self.stopping_criteria = criteria(patience, limit)
+        criteria = methods[convergence]
+        self.convergence = criteria(patience, limit)
         self.patience = patience
         self.limit = limit
 
@@ -117,14 +117,14 @@ class Network:
                 val_score = metric(y_val, pred)
                 self.val_score_curve.append(val_score)
 
-            # stopping criteria
-            if not self.stopping_criteria.should_stop(loss, val_loss):
-                if self.stopping_criteria.restore_weights:
+            # convergence
+            if not self.convergence.should_stop(loss, val_loss):
+                if self.convergence.restore_weights:
                     best_epoch = epoch
                     for l in self.layers:
                         l.store_best()
             else:
-                if self.stopping_criteria.restore_weights:
+                if self.convergence.restore_weights:
                     for l in self.layers:
                         l.load_best()
 
@@ -153,7 +153,7 @@ class Classifier(Network):
         alpha: float = 0.5,
         shuffle: bool = False,
         batch_size: int = 64,
-        stopping_criteria: str = "loss_convergence",
+        convergence: str = "loss_convergence",
         patience: int = 10,
         limit: float = -np.inf,
         max_iter: int = 500,
@@ -166,7 +166,7 @@ class Classifier(Network):
             alpha=alpha,
             shuffle=shuffle,
             batch_size=batch_size,
-            stopping_criteria=stopping_criteria,
+            convergence=convergence,
             patience=patience,
             limit=limit,
             max_iter=max_iter,
@@ -212,7 +212,7 @@ class Regressor(Network):
         alpha: float = 0.5,
         shuffle: bool = False,
         batch_size: int = 64,
-        stopping_criteria: str = "loss_convergence",
+        convergence: str = "loss_convergence",
         patience: int = 10,
         limit: float = -np.inf,
         max_iter: int = 500,
@@ -225,7 +225,7 @@ class Regressor(Network):
             alpha=alpha,
             shuffle=shuffle,
             batch_size=batch_size,
-            stopping_criteria=stopping_criteria,
+            convergence=convergence,
             patience=patience,
             limit=limit,
             max_iter=max_iter,

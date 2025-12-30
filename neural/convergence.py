@@ -17,7 +17,7 @@ class LossConvergence:
         if self.limit != -np.inf:
             return loss < self.limit
 
-        if abs(self.best_loss - loss) < 1e-5:
+        if abs(self.best_loss - loss) < 1e-6:
             self.counter += 1
         else:
             if loss < self.best_loss:
@@ -60,7 +60,7 @@ class EarlyStopping:
         return True
 
 
-stopping_criterias = {
+methods = {
     "loss_convergence": LossConvergence,
     "early_stopping": EarlyStopping,
 }
