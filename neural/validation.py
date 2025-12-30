@@ -1,10 +1,13 @@
 import time
 from itertools import product
+from typing import Type
 
 import numpy as np
 from dask.delayed import delayed
 from dask.distributed import Client, progress
 from sklearn.preprocessing import StandardScaler
+
+from neural.network import Network
 
 
 def kfold(n, k):
@@ -23,7 +26,7 @@ def kfold(n, k):
 
 
 def train_and_score(
-    model,
+    model: Type[Network],
     X: np.ndarray,
     y: np.ndarray,
     k: int,
@@ -48,16 +51,16 @@ def train_and_score(
         if scale:
             X_scaler = StandardScaler()
             X_train = X_scaler.fit_transform(X_train)
-            X_val = X_scaler.transform(X_val)
+            X_val = np.asarray(X_scaler.transform(X_val))
 
             y_scaler = StandardScaler()
             y_train = y_scaler.fit_transform(y_train)
-            y_val = y_scaler.transform(y_val)
+            y_val = np.asarray(y_scaler.transform(y_val))
 
         net = model(**params)
 
         try:
-            net.fit(X_train, y_train, X_val=X_val, y_val=y_val)
+            net.fit(X_train, y_train, metric, X_val=X_val, y_val=y_val)
             predictions = net.predict(X_val)
 
             if scale:
@@ -86,7 +89,7 @@ def train_and_score(
 
 
 def grid_search(
-    model,
+    model: Type[Network],
     hyperparams: dict,
     X: np.ndarray,
     y: np.ndarray,
