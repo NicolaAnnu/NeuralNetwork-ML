@@ -51,6 +51,14 @@ class Layer:
         gradient_w = self.out.T @ delta / delta.shape[0]
         gradient_b = np.sum(delta, axis=0) / delta.shape[0]
 
+        norm_w = np.linalg.norm(gradient_w)
+        norm_b = np.linalg.norm(gradient_b)
+
+        clip_value = 1.0
+        if norm_w > clip_value:
+            gradient_w = clip_value * gradient_w / norm_w
+            gradient_b = clip_value * gradient_b / norm_b
+
         # compute delta w and b for momentum
         delta_w = self.learning_rate * gradient_w
         delta_b = self.learning_rate * gradient_b
