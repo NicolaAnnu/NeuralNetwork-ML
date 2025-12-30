@@ -82,10 +82,10 @@ class Elu(Activation):
 
 
 activations = {
-    "linear": Linear(),
-    "logistic": Logistic(),
-    "tanh": Tanh(),
-    "relu": Relu(),
-    "leaky_relu": LeakyRelu(),
-    "elu": Elu(),
+    "linear": Linear,
+    "logistic": Logistic,
+    "tanh": Tanh,
+    "relu": Relu,
+    "leaky_relu": LeakyRelu,
+    "elu": Elu,
 }
