@@ -36,7 +36,7 @@ class Layer:
         self.b = self.best_b.copy()
 
     def forward(self, X: np.ndarray) -> np.ndarray:
-        self.out = X.copy()
+        self.out = X
         self.net = X @ self.W + self.b
 
         return self.activation(self.net)

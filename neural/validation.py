@@ -3,7 +3,6 @@ from itertools import product
 from typing import Type
 
 import numpy as np
-from dask.delayed import delayed
 from dask.distributed import Client, as_completed, progress
 from sklearn.preprocessing import StandardScaler
 
@@ -117,23 +116,26 @@ def grid_search(
         print(f"total training: {len(combinations) * k}")
 
     params_list = [{k: v for k, v in zip(keys, comb)} for comb in combinations]
-    tasks = [
-        delayed(train_and_score)(model, X, y, k, metric, scale, params)
+
+    start = time.perf_counter()
+    X_bc = client.scatter(X, broadcast=True)
+    y_bc = client.scatter(y, broadcast=True)
+    futures = [
+        client.submit(
+            train_and_score, model, X_bc, y_bc, k, metric, scale, params, pure=False
+        )
         for params in params_list
     ]
 
     # perform parallel k-folds
-    start = time.perf_counter()
-    futures = client.compute(tasks)
     if verbose:
         progress(futures)
 
     results = []
     for future in as_completed(futures):
         results.append(future.result())
-        client.cancel(future)
-    end = time.perf_counter()
     client.close()
+    end = time.perf_counter()
 
     # log some statistics
     assert isinstance(results, list)
