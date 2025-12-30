@@ -1,17 +1,7 @@
-from typing import Protocol
-
 import numpy as np
 
 
-class Activation(Protocol):
-    def __call__(self, x: np.ndarray) -> np.ndarray: ...
-
-    def derivative(self, x: np.ndarray) -> np.ndarray: ...
-
-    def init_weights(self, fan_in: int, fan_out: int) -> np.ndarray: ...
-
-
-class Linear(Activation):
+class Linear:
     def __call__(self, x: np.ndarray) -> np.ndarray:
         return x
 
@@ -23,7 +13,7 @@ class Linear(Activation):
         return np.random.uniform(-limit, limit, (fan_in, fan_out))
 
 
-class Logistic(Activation):
+class Logistic:
     def __call__(self, x: np.ndarray) -> np.ndarray:
         return 1 / (1 + np.exp(-x))
 
@@ -36,7 +26,7 @@ class Logistic(Activation):
         return np.random.uniform(-limit, limit, (fan_in, fan_out))
 
 
-class Tanh(Activation):
+class Tanh:
     def __call__(self, x: np.ndarray) -> np.ndarray:
         return np.tanh(x)
 
@@ -48,7 +38,7 @@ class Tanh(Activation):
         return np.random.uniform(-limit, limit, (fan_in, fan_out))
 
 
-class Relu(Activation):
+class Relu:
     def __call__(self, x: np.ndarray) -> np.ndarray:
         return np.maximum(0, x)
 
@@ -59,7 +49,7 @@ class Relu(Activation):
         return np.random.normal(0, np.sqrt(2 / fan_in), (fan_in, fan_out))
 
 
-class LeakyRelu(Activation):
+class LeakyRelu:
     def __call__(self, x: np.ndarray) -> np.ndarray:
         return np.where(x > 0, x, 0.01 * x)
 
@@ -70,7 +60,7 @@ class LeakyRelu(Activation):
         return np.random.normal(0, np.sqrt(2 / fan_in), (fan_in, fan_out))
 
 
-class Elu(Activation):
+class Elu:
     def __call__(self, x: np.ndarray) -> np.ndarray:
         return np.where(x > 0, x, np.exp(x) - 1)
 
@@ -82,10 +72,10 @@ class Elu(Activation):
 
 
 activations = {
-    "linear": Linear,
-    "logistic": Logistic,
-    "tanh": Tanh,
-    "relu": Relu,
-    "leaky_relu": LeakyRelu,
-    "elu": Elu,
+    "linear": Linear(),
+    "logistic": Logistic(),
+    "tanh": Tanh(),
+    "relu": Relu(),
+    "leaky_relu": LeakyRelu(),
+    "elu": Elu(),
 }
