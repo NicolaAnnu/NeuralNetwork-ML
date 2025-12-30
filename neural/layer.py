@@ -1,19 +1,20 @@
 import numpy as np
 
-from neural.activations import Activation
+from neural.activations import activations
 
 
 class Layer:
     def __init__(
         self,
         units: int,
-        activation: Activation,
-        learning_rate: float,
-        lam: float,
-        alpha: float,
+        activation: str = "logistic",
+        learning_rate: float = 0.01,
+        lam: float = 0.0001,
+        alpha: float = 0.5,
     ) -> None:
         self.units = units
-        self.activation = activation
+        activation_cls = activations[activation]
+        self.activation = activation_cls()
         self.learning_rate = learning_rate
         self.lam = lam
         self.alpha = alpha
@@ -35,7 +36,7 @@ class Layer:
         self.b = self.best_b.copy()
 
     def forward(self, X: np.ndarray) -> np.ndarray:
-        self.out = X
+        self.out = X.copy()
         self.net = X @ self.W + self.b
 
         return self.activation(self.net)
