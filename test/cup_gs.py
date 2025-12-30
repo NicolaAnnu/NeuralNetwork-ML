@@ -57,15 +57,14 @@ if __name__ == "__main__":
         hyperparams = {
             "hidden_layer_sizes": [(64, 64, 64)],
             "activation": ["leaky_relu"],
-            "learning_rate": [0.03, 0.05, 0.07],
+            "learning_rate": [0.001, 0.003, 0.005, 0.007, 0.01],
             "lam": [0.0, 0.00001, 0.0001],
-            "alpha": [0.9],
-            "tol": [1e-5],
-            "batch_size": [8, 16, 32],
+            "alpha": [0.0, 0.7, 0.9],
             "shuffle": [False, True],
-            "early_stopping": [False, True],
-            "patience": [10, 20, 50],
-            "max_iter": [3000],
+            "batch_size": [256, -1],
+            "convergence": ["early_stopping"],
+            "patience": [50],
+            "max_iter": [5000],
         }
 
         results = grid_search(
@@ -103,14 +102,12 @@ if __name__ == "__main__":
     test_r2s = []
 
     # re-train the model
-    loss_limit = -np.inf
     params = best["parameters"]
-    params["patience"] = 50
-    print(json.dumps(params, indent=2))
+    params["limit"] = -np.inf
+    if params["convergence"] == "early_stopping":
+        params["limit"] = best["loss"]
 
-    if params["early_stopping"]:
-        params["early_stopping"] = False  # always disable it for retraining
-        loss_limit = best["loss"]
+    print(json.dumps(params, indent=2))
 
     X_scaler = StandardScaler()
     X_train = X_scaler.fit_transform(X_train)
@@ -121,7 +118,15 @@ if __name__ == "__main__":
     y_test = np.asarray(y_scaler.transform(y_test))
 
     nets = retrain(
-        Regressor, params, X_train, y_train, loss_limit, X_test, y_test, 10, args.dask
+        Regressor,
+        params,
+        X_train,
+        y_train,
+        params["limit"],
+        X_test,
+        y_test,
+        10,
+        args.dask,
     )
 
     for net in nets:

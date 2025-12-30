@@ -51,15 +51,15 @@ if __name__ == "__main__":
     net = Regressor(
         hidden_layer_sizes=(64, 64, 64),
         activation="leaky_relu",
-        learning_rate=0.07,
+        learning_rate=0.007,
         lam=0.00001,
         alpha=0.9,
         shuffle=True,
-        batch_size=64,
+        batch_size=-1,
         convergence="early_stopping",
-        patience=50,
+        patience=100,
         limit=-np.inf,
-        max_iter=2000,
+        max_iter=5000,
     )
 
     net.fit(X_train, y_train, mean_euclidean_error, X_test, y_test)
