@@ -42,14 +42,14 @@ if __name__ == "__main__":
 
     if args.gs:
         hyperparams = {
-            "hidden_layer_sizes": [(3,), (4,)],
+            "hidden_layer_sizes": [(4,)],
             "activation": ["tanh"],
-            "learning_rate": [0.01, 0.03, 0.05],
-            "lam": [0.00001, 0.0001],
-            "alpha": [0.0, 0.7, 0.9],
+            "learning_rate": [0.03, 0.05, 0.07],
+            "lam": [0.0, 0.00001],
+            "alpha": [0.0, 0.7],
             "shuffle": [False, True],
             "batch_size": [8, 16],
-            "convergence": ["loss_convergence"],
+            "convergence": ["loss_convergence", "early_stopping"],
             "patience": [20],
             "max_iter": [2000],
         }
