@@ -1,9 +1,7 @@
 import numpy as np
-from sklearn.metrics import accuracy_score
 
-from neural.activations import activations
 from neural.layer import Layer
-from neural.metrics import mean_euclidean_error
+from neural.stopping_criteria import stopping_criterias
 
 
 class Network:
@@ -14,18 +12,18 @@ class Network:
         learning_rate: float = 0.01,
         lam: float = 0.0001,
         alpha: float = 0.5,
-        tol: float = 1e-5,
-        batch_size: int = 10,
         shuffle: bool = False,
-        early_stopping: bool = False,
+        batch_size: int = 64,
+        stopping_criteria: str = "loss_convergence",
         patience: int = 10,
-        max_iter: int = 200,
+        limit: float = -np.inf,
+        max_iter: int = 500,
     ) -> None:
         self.hidden_layer_sizes = hidden_layer_sizes
         self.layers = [
             Layer(
                 units=units,
-                activation=activations[activation],
+                activation=activation,
                 learning_rate=learning_rate,
                 lam=lam,
                 alpha=alpha,
@@ -37,11 +35,14 @@ class Network:
         self.learning_rate = learning_rate
         self.lam = lam
         self.alpha = alpha
-        self.tol = tol
-        self.batch_size = batch_size
         self.shuffle = shuffle
-        self.early_stopping = early_stopping
+        self.batch_size = batch_size
+
+        criteria = stopping_criterias[stopping_criteria]
+        self.stopping_criteria = criteria(patience, limit)
         self.patience = patience
+        self.limit = limit
+
         self.max_iter = max_iter
 
     def init_weights(self, input_size):
@@ -64,7 +65,7 @@ class Network:
         self,
         X: np.ndarray,
         y: np.ndarray,
-        loss_limit: float = -np.inf,
+        metric,
         X_val: None | np.ndarray = None,
         y_val: None | np.ndarray = None,
     ):
@@ -78,18 +79,13 @@ class Network:
         indices = np.arange(X.shape[0])
 
         self.loss_curve = []
-        self.val_loss_curve = []
-        self.err_curve = []
-        self.val_err_curve = []
+        self.score_curve = []
 
-        best_loss = np.inf
-        stop_counter = 0
+        if X_val is not None:
+            self.val_loss_curve = []
+            self.val_score_curve = []
 
-        if self.early_stopping:
-            es_counter = 0
-            best_val_loss = np.inf
-
-        for _ in range(self.max_iter):
+        for epoch in range(self.max_iter):
             # shuffle the indices
             if self.shuffle:
                 np.random.shuffle(indices)
@@ -102,62 +98,45 @@ class Network:
                 # backpropagation
                 self.backward(2 * error / error.shape[1])
 
-            # epoch loss and accuracy
+            # training loss and score
             out = self.forward(X)
-            self.loss_curve.append(np.mean((out - y) ** 2))
+            loss = np.mean((out - y) ** 2)
+            self.loss_curve.append(loss)
 
             pred = self.predict(X)
-            self.err_curve.append(self.error(y, pred))
+            score = metric(y, pred)
+            self.score_curve.append(score)
 
-            # check if loss limit is reached
-            if self.loss_curve[-1] < loss_limit:
-                break
-
-            # epoch loss on validation set for early stopping
+            # validation loss and score
             if X_val is not None:
                 out = self.forward(X_val)
-                self.val_loss_curve.append(np.mean((out - y_val) ** 2))
+                val_loss = np.mean((out - y_val) ** 2)
+                self.val_loss_curve.append(val_loss)
 
                 pred = self.predict(X_val)
-                self.val_err_curve.append(self.error(y_val, pred))
+                val_score = metric(y_val, pred)
+                self.val_score_curve.append(val_score)
 
-            # early stopping
-            if self.early_stopping:
-                if self.val_loss_curve[-1] < best_val_loss:
-                    best_val_loss = self.val_loss_curve[-1]
-                    es_counter = 0
-
-                    # store best weights for each layer
+            # stopping criteria
+            if not self.stopping_criteria.should_stop(loss, val_loss):
+                if self.stopping_criteria.restore_weights:
+                    best_epoch = epoch
                     for l in self.layers:
                         l.store_best()
-                else:
-                    es_counter += 1
-
-                if es_counter == self.patience:
-                    # restore best weigths for each layer
+            else:
+                if self.stopping_criteria.restore_weights:
                     for l in self.layers:
                         l.load_best()
 
-                    # cut loss curves at best epoch
-                    best_epoch = len(self.loss_curve) - self.patience
-
                     self.loss_curve = self.loss_curve[:best_epoch]
                     self.val_loss_curve = self.val_loss_curve[:best_epoch]
-                    self.err_curve = self.loss_curve[:best_epoch]
-                    self.val_err_curve = self.val_loss_curve[:best_epoch]
+                    self.score_curve = self.loss_curve[:best_epoch]
+                    self.val_score_curve = self.val_loss_curve[:best_epoch]
 
-                    break
+                break
 
-            # stopping criteria (loss not improving)
-            if not self.early_stopping:
-                if abs(best_loss - self.loss_curve[-1]) < self.tol:
-                    stop_counter += 1
-                else:
-                    best_loss = self.loss_curve[-1]
-                    stop_counter = 0
-
-                if stop_counter == self.patience:
-                    break
+    def predict(self, X: np.ndarray) -> np.ndarray:
+        return self.forward(X)
 
     @property
     def loss(self) -> float:
@@ -172,12 +151,12 @@ class Classifier(Network):
         learning_rate: float = 0.01,
         lam: float = 0.0001,
         alpha: float = 0.5,
-        tol: float = 1e-5,
-        batch_size: int = 10,
         shuffle: bool = False,
-        early_stopping: bool = False,
+        batch_size: int = 64,
+        stopping_criteria: str = "loss_convergence",
         patience: int = 10,
-        max_iter: int = 200,
+        limit: float = -np.inf,
+        max_iter: int = 500,
     ) -> None:
         super().__init__(
             hidden_layer_sizes=hidden_layer_sizes,
@@ -185,11 +164,11 @@ class Classifier(Network):
             learning_rate=learning_rate,
             lam=lam,
             alpha=alpha,
-            tol=tol,
-            batch_size=batch_size,
             shuffle=shuffle,
-            early_stopping=early_stopping,
+            batch_size=batch_size,
+            stopping_criteria=stopping_criteria,
             patience=patience,
+            limit=limit,
             max_iter=max_iter,
         )
 
@@ -197,26 +176,27 @@ class Classifier(Network):
         self,
         X: np.ndarray,
         y: np.ndarray,
-        loss_limit: float = -np.inf,
+        metric,
         X_val: None | np.ndarray = None,
         y_val: None | np.ndarray = None,
     ):
+        if len(y.shape) == 1:
+            y = y.reshape(-1, 1)
+
+        if y_val is not None:
+            if len(y_val.shape) == 1:
+                y_val = y_val.reshape(-1, 1)
+
         # add output layer with one logistic unit
         output = Layer(
             units=1,
-            activation=activations["logistic"],
+            activation="logistic",
             learning_rate=self.learning_rate,
             lam=self.lam,
             alpha=self.alpha,
         )
         self.layers.append(output)
-
-        # error function
-        self.error = accuracy_score
-
-        # temporary
-        y_val2 = None if y_val is None else y_val.reshape(-1, 1)
-        super().fit(X, y.reshape(-1, 1), loss_limit, X_val, y_val2)
+        super().fit(X, y, metric, X_val, y_val)
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         return np.round(self.forward(X)[:, 0])
@@ -230,12 +210,12 @@ class Regressor(Network):
         learning_rate: float = 0.01,
         lam: float = 0.0001,
         alpha: float = 0.5,
-        tol: float = 1e-5,
-        batch_size: int = 10,
         shuffle: bool = False,
-        early_stopping: bool = False,
+        batch_size: int = 64,
+        stopping_criteria: str = "loss_convergence",
         patience: int = 10,
-        max_iter: int = 200,
+        limit: float = -np.inf,
+        max_iter: int = 500,
     ) -> None:
         super().__init__(
             hidden_layer_sizes=hidden_layer_sizes,
@@ -243,11 +223,11 @@ class Regressor(Network):
             learning_rate=learning_rate,
             lam=lam,
             alpha=alpha,
-            tol=tol,
-            batch_size=batch_size,
             shuffle=shuffle,
-            early_stopping=early_stopping,
+            batch_size=batch_size,
+            stopping_criteria=stopping_criteria,
             patience=patience,
+            limit=limit,
             max_iter=max_iter,
         )
 
@@ -255,27 +235,27 @@ class Regressor(Network):
         self,
         X: np.ndarray,
         y: np.ndarray,
-        loss_limit: float = -np.inf,
+        metric,
         X_val: None | np.ndarray = None,
         y_val: None | np.ndarray = None,
     ):
-        # see if output should be 1-Dimensional or N-Dimensional
-        n_outputs = 1 if (len(y.shape) == 1) else y.shape[1]
+        if len(y.shape) == 1:
+            y = y.reshape(-1, 1)
+
+        if y_val is not None:
+            if len(y_val.shape) == 1:
+                y_val = y_val.reshape(-1, 1)
 
         # add the output layer with
         output = Layer(
-            units=n_outputs,
-            activation=activations["linear"],
+            units=y.shape[1],
+            activation="linear",
             learning_rate=self.learning_rate,
             lam=self.lam,
             alpha=self.alpha,
         )
         self.layers.append(output)
-
-        # error function
-        self.error = mean_euclidean_error
-
-        super().fit(X, y, loss_limit, X_val, y_val)
+        super().fit(X, y, metric, X_val, y_val)
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         return self.forward(X)
