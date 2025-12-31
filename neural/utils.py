@@ -26,12 +26,11 @@ def load_results(filepath: str) -> list[dict]:
         return json.load(fp)
 
 
-def retrain(model, params, X_train, y_train, loss_limit, X_test, y_test, n, address):
-    def fit(net, X_train, y_train, loss_limit, X_test, y_test):
-        net.fit(X_train, y_train, loss_limit, X_test, y_test)
+def retrain(model, params, X_train, y_train, X_test, y_test, metric, n, address):
+    def fit(net, X_train, y_train, metric, X_test, y_test):
+        net.fit(X_train, y_train, metric, X_test, y_test)
         return net
 
-    # dask init
     # dask init
     if address:
         client = Client(address)
@@ -42,7 +41,7 @@ def retrain(model, params, X_train, y_train, loss_limit, X_test, y_test, n, addr
 
     nets = [model(**params) for _ in range(n)]
     tasks = [
-        delayed(fit)(net, X_train, y_train, loss_limit, X_test, y_test) for net in nets
+        delayed(fit)(net, X_train, y_train, metric, X_test, y_test) for net in nets
     ]
 
     # perform parallel k-folds

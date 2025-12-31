@@ -119,7 +119,7 @@ class Network:
 
             # convergence
             if not self.convergence.should_stop(loss, val_loss):
-                if self.convergence.restore_weights:
+                if self.convergence.restore_weights and self.convergence.counter == 0:
                     best_epoch = epoch
                     for l in self.layers:
                         l.store_best()
