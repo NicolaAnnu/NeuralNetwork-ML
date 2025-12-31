@@ -85,6 +85,7 @@ class Network:
             self.val_loss_curve = []
             self.val_score_curve = []
 
+        best_epoch = 0
         for epoch in range(self.max_iter):
             # shuffle the indices
             if self.shuffle:
@@ -118,7 +119,6 @@ class Network:
                 self.val_score_curve.append(val_score)
 
             # convergence
-            best_epoch = 0
             if not self.convergence.should_stop(loss, val_loss):
                 if self.convergence.restore_weights and self.convergence.counter == 0:
                     best_epoch = epoch
