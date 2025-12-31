@@ -64,7 +64,7 @@ if __name__ == "__main__":
             "alpha": [0.0, 0.7, 0.9],
             "shuffle": [False, True],
             "batch_size": [16, 32],
-            "convergence": ["early_stopping"],
+            "convergence": ["loss_convergence", "early_stopping"],
             "patience": [50],
             "max_iter": [3000],
         }
