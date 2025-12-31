@@ -118,6 +118,7 @@ class Network:
                 self.val_score_curve.append(val_score)
 
             # convergence
+            best_epoch = 0
             if not self.convergence.should_stop(loss, val_loss):
                 if self.convergence.restore_weights and self.convergence.counter == 0:
                     best_epoch = epoch
@@ -128,10 +129,11 @@ class Network:
                     for l in self.layers:
                         l.load_best()
 
-                    self.loss_curve = self.loss_curve[:best_epoch]
-                    self.val_loss_curve = self.val_loss_curve[:best_epoch]
-                    self.score_curve = self.loss_curve[:best_epoch]
-                    self.val_score_curve = self.val_loss_curve[:best_epoch]
+                    if best_epoch > 0:
+                        self.loss_curve = self.loss_curve[:best_epoch]
+                        self.val_loss_curve = self.val_loss_curve[:best_epoch]
+                        self.score_curve = self.loss_curve[:best_epoch]
+                        self.val_score_curve = self.val_loss_curve[:best_epoch]
 
                 break
 

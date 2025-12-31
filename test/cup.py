@@ -59,14 +59,14 @@ if __name__ == "__main__":
         hyperparams = {
             "hidden_layer_sizes": [(64, 64, 64)],
             "activation": ["leaky_relu"],
-            "learning_rate": [0.001, 0.003, 0.005, 0.007, 0.01],
+            "learning_rate": [0.01, 0.03, 0.05, 0.07],
             "lam": [0.0, 0.00001, 0.0001],
             "alpha": [0.0, 0.7, 0.9],
             "shuffle": [False, True],
-            "batch_size": [200],
+            "batch_size": [16, 32],
             "convergence": ["early_stopping"],
             "patience": [50],
-            "max_iter": [5000],
+            "max_iter": [3000],
         }
 
         results = grid_search(
