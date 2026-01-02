@@ -13,7 +13,7 @@ class LossConvergence:
         self.counter = 0
         self.best_loss = np.inf
 
-    def should_stop(self, loss: float, val_loss: float) -> bool:
+    def should_stop(self, loss: float, val_loss: None | float) -> bool:
         if self.limit != -np.inf:
             return loss < self.limit
 

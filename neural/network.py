@@ -80,10 +80,8 @@ class Network:
 
         self.loss_curve = []
         self.score_curve = []
-
-        if X_val is not None:
-            self.val_loss_curve = []
-            self.val_score_curve = []
+        self.val_loss_curve = []
+        self.val_score_curve = []
 
         best_epoch = 0
         for epoch in range(self.max_iter):
@@ -122,18 +120,18 @@ class Network:
             if not self.convergence.should_stop(loss, val_loss):
                 if self.convergence.restore_weights and self.convergence.counter == 0:
                     best_epoch = epoch
-                    for l in self.layers:
-                        l.store_best()
+                    for layer in self.layers:
+                        layer.store_best()
             else:
                 if self.convergence.restore_weights:
-                    for l in self.layers:
-                        l.load_best()
+                    for layer in self.layers:
+                        layer.load_best()
 
                     if best_epoch > 0:
                         self.loss_curve = self.loss_curve[:best_epoch]
                         self.val_loss_curve = self.val_loss_curve[:best_epoch]
-                        self.score_curve = self.loss_curve[:best_epoch]
-                        self.val_score_curve = self.val_loss_curve[:best_epoch]
+                        self.score_curve = self.score_curve[:best_epoch]
+                        self.val_score_curve = self.val_score_curve[:best_epoch]
 
                 break
 
