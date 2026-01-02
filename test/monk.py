@@ -75,18 +75,15 @@ if __name__ == "__main__":
 
     results = [r for r in results if np.isfinite(r["score"])]
     results = [r for r in results if np.isfinite(r["std"])]
-    best = sorted(results, key=lambda x: x["score"] + x["std"], reverse=True)[0]
+    best = sorted(results, key=lambda x: (x["score"], -x["std"]), reverse=True)[0]
     print(json.dumps(best["parameters"], indent=2))
     print(f"validation score: {best['score']:.2f}")
     print(f"validation std score: {best['std']:.2f}")
     print(f"validation loss: {best['loss']:.2f}")
 
     params = best["parameters"]
-
-    # if the model used early stopping now stops on same loss found in validation
-    params["limit"] = (
-        best["loss"] if params["convergence"] == "early_stopping" else -np.inf
-    )
+    if params["convergence"] == "early_stopping":
+        params["limit"] = best["loss"]
 
     # re-train the model
     net = Classifier(**params)

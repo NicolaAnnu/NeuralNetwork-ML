@@ -88,7 +88,7 @@ if __name__ == "__main__":
         results = load_results("results/cup.json")
 
     results = [r for r in results if r["score"] != -np.inf]
-    best = sorted(results, key=lambda x: x["score"])[0]
+    best = sorted(results, key=lambda x: (x["score"], x["std"]))[0]
     print(f"grid search score: {best['score']:.2f}")
     print(f"grid search std score: {best['std']:.2f}")
     print(f"grid search loss: {best['loss']:.2f}")
