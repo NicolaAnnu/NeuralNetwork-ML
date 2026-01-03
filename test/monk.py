@@ -90,7 +90,8 @@ if __name__ == "__main__":
     net.fit(X_train, y_train, accuracy_score, X_val=X_test, y_val=y_test)
 
     print(f"converged in {len(net.loss_curve)} epochs")
-    print(f"loss: {net.loss:.3f}")
+    print(f"training loss: {net.loss:.4f}")
+    print(f"test loss: {net.val_loss:.4f}")
 
     # training accuracy
     y_pred = net.predict(X_train)

@@ -142,6 +142,10 @@ class Network:
     def loss(self) -> float:
         return self.loss_curve[-1]
 
+    @property
+    def val_loss(self) -> float:
+        return self.val_loss_curve[-1]
+
 
 class Classifier(Network):
     def __init__(
