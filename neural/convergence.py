@@ -1,7 +1,7 @@
 import numpy as np
 
 
-class LossConvergence:
+class TrainLoss:
     def __init__(
         self,
         patience: int = 10,
@@ -61,6 +61,6 @@ class EarlyStopping:
 
 
 methods = {
-    "loss_convergence": LossConvergence,
+    "train_loss": TrainLoss,
     "early_stopping": EarlyStopping,
 }
