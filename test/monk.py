@@ -49,7 +49,7 @@ if __name__ == "__main__":
             "alpha": [0.0, 0.7],
             "shuffle": [False, True],
             "batch_size": [8, 16],
-            "convergence": ["loss_convergence", "early_stopping"],
+            "convergence": ["train_loss", "early_stopping"],
             "patience": [20],
             "max_iter": [2000],
         }
