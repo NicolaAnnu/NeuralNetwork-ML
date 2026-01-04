@@ -65677,7 +65677,7 @@
       "alpha": 0.0,
       "shuffle": false,
       "batch_size": 8,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -65715,7 +65715,7 @@
       "alpha": 0.0,
       "shuffle": false,
       "batch_size": 16,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -65753,7 +65753,7 @@
       "alpha": 0.0,
       "shuffle": true,
       "batch_size": 8,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -65791,7 +65791,7 @@
       "alpha": 0.0,
       "shuffle": true,
       "batch_size": 16,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -65829,7 +65829,7 @@
       "alpha": 0.7,
       "shuffle": false,
       "batch_size": 8,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -65867,7 +65867,7 @@
       "alpha": 0.7,
       "shuffle": false,
       "batch_size": 16,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -65905,7 +65905,7 @@
       "alpha": 0.7,
       "shuffle": true,
       "batch_size": 8,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -65943,7 +65943,7 @@
       "alpha": 0.7,
       "shuffle": true,
       "batch_size": 16,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -65981,7 +65981,7 @@
       "alpha": 0.0,
       "shuffle": false,
       "batch_size": 8,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -66019,7 +66019,7 @@
       "alpha": 0.0,
       "shuffle": false,
       "batch_size": 16,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -66057,7 +66057,7 @@
       "alpha": 0.0,
       "shuffle": true,
       "batch_size": 8,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -66095,7 +66095,7 @@
       "alpha": 0.0,
       "shuffle": true,
       "batch_size": 16,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -66133,7 +66133,7 @@
       "alpha": 0.7,
       "shuffle": false,
       "batch_size": 8,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -66171,7 +66171,7 @@
       "alpha": 0.7,
       "shuffle": false,
       "batch_size": 16,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -66209,7 +66209,7 @@
       "alpha": 0.7,
       "shuffle": true,
       "batch_size": 8,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -66247,7 +66247,7 @@
       "alpha": 0.7,
       "shuffle": true,
       "batch_size": 16,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -66285,7 +66285,7 @@
       "alpha": 0.0,
       "shuffle": false,
       "batch_size": 8,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -66323,7 +66323,7 @@
       "alpha": 0.0,
       "shuffle": false,
       "batch_size": 16,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -66361,7 +66361,7 @@
       "alpha": 0.0,
       "shuffle": true,
       "batch_size": 8,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -66399,7 +66399,7 @@
       "alpha": 0.0,
       "shuffle": true,
       "batch_size": 16,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -66437,7 +66437,7 @@
       "alpha": 0.7,
       "shuffle": false,
       "batch_size": 8,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -66475,7 +66475,7 @@
       "alpha": 0.7,
       "shuffle": false,
       "batch_size": 16,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -66513,7 +66513,7 @@
       "alpha": 0.7,
       "shuffle": true,
       "batch_size": 8,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -66551,7 +66551,7 @@
       "alpha": 0.7,
       "shuffle": true,
       "batch_size": 16,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -66589,7 +66589,7 @@
       "alpha": 0.0,
       "shuffle": false,
       "batch_size": 8,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -66627,7 +66627,7 @@
       "alpha": 0.0,
       "shuffle": false,
       "batch_size": 16,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -66665,7 +66665,7 @@
       "alpha": 0.0,
       "shuffle": true,
       "batch_size": 8,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -66703,7 +66703,7 @@
       "alpha": 0.0,
       "shuffle": true,
       "batch_size": 16,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -66741,7 +66741,7 @@
       "alpha": 0.7,
       "shuffle": false,
       "batch_size": 8,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -66779,7 +66779,7 @@
       "alpha": 0.7,
       "shuffle": false,
       "batch_size": 16,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -66817,7 +66817,7 @@
       "alpha": 0.7,
       "shuffle": true,
       "batch_size": 8,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -66855,7 +66855,7 @@
       "alpha": 0.7,
       "shuffle": true,
       "batch_size": 16,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -66893,7 +66893,7 @@
       "alpha": 0.0,
       "shuffle": false,
       "batch_size": 8,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -66931,7 +66931,7 @@
       "alpha": 0.0,
       "shuffle": false,
       "batch_size": 16,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -66969,7 +66969,7 @@
       "alpha": 0.0,
       "shuffle": true,
       "batch_size": 8,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -67007,7 +67007,7 @@
       "alpha": 0.0,
       "shuffle": true,
       "batch_size": 16,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -67045,7 +67045,7 @@
       "alpha": 0.7,
       "shuffle": false,
       "batch_size": 8,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -67083,7 +67083,7 @@
       "alpha": 0.7,
       "shuffle": false,
       "batch_size": 16,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -67121,7 +67121,7 @@
       "alpha": 0.7,
       "shuffle": true,
       "batch_size": 8,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -67159,7 +67159,7 @@
       "alpha": 0.7,
       "shuffle": true,
       "batch_size": 16,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -67197,7 +67197,7 @@
       "alpha": 0.0,
       "shuffle": false,
       "batch_size": 8,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -67235,7 +67235,7 @@
       "alpha": 0.0,
       "shuffle": false,
       "batch_size": 16,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -67273,7 +67273,7 @@
       "alpha": 0.0,
       "shuffle": true,
       "batch_size": 8,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -67311,7 +67311,7 @@
       "alpha": 0.0,
       "shuffle": true,
       "batch_size": 16,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -67349,7 +67349,7 @@
       "alpha": 0.7,
       "shuffle": false,
       "batch_size": 8,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -67387,7 +67387,7 @@
       "alpha": 0.7,
       "shuffle": false,
       "batch_size": 16,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -67425,7 +67425,7 @@
       "alpha": 0.7,
       "shuffle": true,
       "batch_size": 8,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
@@ -67463,7 +67463,7 @@
       "alpha": 0.7,
       "shuffle": true,
       "batch_size": 16,
-      "convergence": "loss_convergence",
+      "convergence": "train_loss",
       "patience": 20,
       "max_iter": 2000
     }
