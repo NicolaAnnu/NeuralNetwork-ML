@@ -69,8 +69,8 @@ def train_and_score(
             score = metric(y_val, predictions)
         except Exception:
             return {
-                "score": -np.inf,
-                "std": np.inf,
+                "score": np.nan,
+                "std": np.nan,
                 "loss": np.inf,
                 "parameters": params,
             }

@@ -64,7 +64,7 @@ if __name__ == "__main__":
             "alpha": [0.0, 0.7, 0.9],
             "shuffle": [False, True],
             "batch_size": [16, 32],
-            "convergence": ["loss_convergence", "early_stopping"],
+            "convergence": ["train_loss", "early_stopping"],
             "patience": [50],
             "max_iter": [3000],
         }
@@ -88,15 +88,16 @@ if __name__ == "__main__":
         results = load_results("results/cup.json")
 
     results = [r for r in results if r["score"] != -np.inf]
-    best = sorted(results, key=lambda x: (x["score"], x["std"]))[0]
+    results = [r for r in results if r["parameters"]["batch_size"] >= 200]
+    best = sorted(results, key=lambda x: x["score"])[0]
     print(f"grid search score: {best['score']:.2f}")
     print(f"grid search std score: {best['std']:.2f}")
     print(f"grid search loss: {best['loss']:.2f}")
 
     loss_curves = []
     val_loss_curves = []
-    err_curves = []
-    val_err_curves = []
+    score_curves = []
+    val_score_curves = []
     losses = []
     train_mees = []
     train_r2s = []
@@ -133,8 +134,8 @@ if __name__ == "__main__":
     for net in nets:
         loss_curves.append(net.loss_curve.copy())
         val_loss_curves.append(net.val_loss_curve.copy())
-        err_curves.append(net.score_curve.copy())
-        val_err_curves.append(net.val_score_curve.copy())
+        score_curves.append(net.score_curve.copy())
+        val_score_curves.append(net.val_score_curve.copy())
         losses.append(net.loss)
 
         # training
@@ -175,8 +176,8 @@ if __name__ == "__main__":
 
     plt.figure(figsize=(6, 5), dpi=150)
     plt.title("MEE Curve")
-    plot_curve(err_curves, label="training")
-    plot_curve(val_err_curves, label="test")
+    plot_curve(score_curves, label="training")
+    plot_curve(val_score_curves, label="test")
     plt.xlabel("Epochs")
     plt.ylabel("MEE")
     plt.legend()
@@ -185,3 +186,11 @@ if __name__ == "__main__":
     plt.show()
 
     target_plot(y_test_raw, y_pred)
+
+    best["loss_curves"] = loss_curves
+    best["val_loss_curves"] = val_loss_curves
+    best["score_curves"] = score_curves
+    best["val_score_curves"] = val_score_curves
+
+    with open(f"results/stable_cup_curves.json", "w") as fp:
+        json.dump(best, fp, indent=2)

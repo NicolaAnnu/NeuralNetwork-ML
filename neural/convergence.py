@@ -17,7 +17,7 @@ class TrainLoss:
         if self.limit != -np.inf:
             return loss < self.limit
 
-        if abs(self.best_loss - loss) < 1e-6:
+        if abs(self.best_loss - loss) < 1e-5:
             self.counter += 1
         else:
             if loss < self.best_loss:

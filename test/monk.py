@@ -42,15 +42,15 @@ if __name__ == "__main__":
 
     if args.gs:
         hyperparams = {
-            "hidden_layer_sizes": [(4,)],
-            "activation": ["tanh"],
-            "learning_rate": [0.03, 0.05, 0.07],
-            "lam": [0.0, 0.00001],
-            "alpha": [0.0, 0.7],
+            "hidden_layer_sizes": [(3,), (4,)],
+            "activation": ["leaky_relu", "tanh"],
+            "learning_rate": [0.01, 0.03, 0.05],
+            "lam": [0.0],
+            "alpha": [0.0],
             "shuffle": [False, True],
-            "batch_size": [8, 16],
+            "batch_size": [8, 16, 32],
             "convergence": ["train_loss", "early_stopping"],
-            "patience": [20],
+            "patience": [10, 30],
             "max_iter": [2000],
         }
 
@@ -75,6 +75,7 @@ if __name__ == "__main__":
 
     results = [r for r in results if np.isfinite(r["score"])]
     results = [r for r in results if np.isfinite(r["std"])]
+    results = [r for r in results if r["parameters"]["learning_rate"] <= 0.05]
     best = sorted(results, key=lambda x: (x["score"], -x["std"]), reverse=True)[0]
     print(json.dumps(best["parameters"], indent=2))
     print(f"validation score: {best['score']:.2f}")
@@ -140,3 +141,11 @@ if __name__ == "__main__":
     plt.legend()
     plt.tight_layout()
     plt.show()
+
+    best["loss_curve"] = net.loss_curve
+    best["val_loss_curve"] = net.val_loss_curve
+    best["score_curve"] = net.score_curve
+    best["val_score_curve"] = net.val_score_curve
+
+    with open(f"results/monk{args.id}_curves.json", "w") as fp:
+        json.dump(best, fp, indent=2)
