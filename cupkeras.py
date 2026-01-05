@@ -1,125 +1,126 @@
-
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.colors import ListedColormap
-import keras as tf
-from keras.layers import Input, Dense
-from keras.models import Model
-from keras.optimizers import Adam # Import Adam optimizer
-from sklearn.utils import shuffle
 import pandas as pd
-from keras.callbacks import EarlyStopping
+import tensorflow as tf
+from tensorflow.keras.layers import Input, Dense
+from tensorflow.keras.models import Model
+from tensorflow.keras.optimizers import SGD
+from tensorflow.keras.regularizers import l2
+from tensorflow.keras.callbacks import EarlyStopping
+from sklearn.preprocessing import StandardScaler
 
+# --- 1. CARICAMENTO E PREPARAZIONE DATI ---
+# Assicurati che il file sia nella stessa cartella
+try:
+    df = pd.read_csv("ml_cup_train.csv", header=None)
+except FileNotFoundError:
+    print("Errore: File 'ml_cup_train.csv' non trovato. Carico dati dummy per test.")
+    # Genero dati casuali solo se non trova il file, per farti vedere che il codice gira
+    df = pd.DataFrame(np.random.rand(1000, 15))
 
+# Separazione Feature e Target (adatta gli indici se necessario)
+X = df.iloc[:, 1:13].to_numpy() # Colonne 1 a 12
+y = df.iloc[:, 13:].to_numpy()  # Colonne 13 in poi
 
-# Data loading and scaling
-df = pd.read_csv("ml_cup_train.csv", header=None)
-X = df.iloc[:, 1:13].to_numpy()
-y = df.iloc[:, 13:].to_numpy()
-
-# 1. Genera una sequenza casuale di indici lunga quanto i tuoi dati
+# Shuffling
 indices = np.random.permutation(X.shape[0])
-
-# 2. Usa questi indici per riordinare entrambi gli array
 X = X[indices]
 y = y[indices]
 
-
-
-from sklearn.preprocessing import StandardScaler
-
-
+# Splitting (80% Train, 20% Test)
 split_index = int(0.8 * X.shape[0])
-X_test = X[split_index:,:]
-y_test = y[split_index:,:]
+X_train = X[:split_index, :]
+y_train = y[:split_index, :]
+X_test = X[split_index:, :]
+y_test = y[split_index:, :]
 
-X = X[:split_index,:]
-y = y[:split_index,:]
-
+# Scaling
+# IMPORTANTE: Il fit si fa SOLO sul train per evitare data leakage
 scaler_X = StandardScaler()
+X_train = scaler_X.fit_transform(X_train)
+X_test = scaler_X.transform(X_test)
+
 scaler_Y = StandardScaler()
-y = scaler_Y.fit_transform(y)
-X = scaler_X.fit_transform(X)
+y_train = scaler_Y.fit_transform(y_train)
+y_test_scaled = scaler_Y.transform(y_test) # Scaliamo anche y_test per calcolare la loss durante il test
 
+# --- 2. DEFINIZIONE MODELLO ---
+inputs = Input(shape=(X_train.shape[1],))
 
+# L2 va inserito qui, nei layer (kernel_regularizer)
+hidden = Dense(64, activation="leaky_relu", kernel_regularizer=l2(1e-6))(inputs)
+hidden = Dense(64, activation="leaky_relu", kernel_regularizer=l2(1e-6))(hidden)
+hidden = Dense(64, activation="leaky_relu", kernel_regularizer=l2(1e-6))(hidden)
 
-# Model definition
-inputs = Input(shape=(X.shape[1],))
-hidden = Dense(128,activation="relu")(inputs)
-hidden = Dense(64,activation="relu")(hidden)
-hidden = Dense(32,activation="relu")(hidden)
-outputs = Dense(y.shape[1], activation='linear')(hidden)
+outputs = Dense(y_train.shape[1], activation='linear')(hidden)
+
 model = Model(inputs=inputs, outputs=outputs)
 
-# Model compilation
-adam_optimizer = Adam(learning_rate = 0.0001) # Instantiate Adam optimizer
+# --- 3. COMPILAZIONE ---
+# Qui definisci il momento
+opt = SGD(learning_rate=0.001, momentum=0.9)
+
 model.compile(
-    optimizer=adam_optimizer, # Pass the optimizer instance
+    optimizer=opt,
     loss="mse",
-    metrics=["mae"] 
+    metrics=["mae"] # Aggiunto MAE per averlo nella valutazione finale
 )
-from keras.callbacks import EarlyStopping
+
+# --- 4. TRAINING ---
+
 early_stopping = EarlyStopping(
-    monitor='val_loss',       # Controlla l'errore sui dati di test/validazione
-    patience=100,              # Aspetta 20 epoche senza miglioramenti prima di stoppare
-    restore_best_weights=True
- ) # Alla fine, ripristina i pesi migliori ottenuti
-# Model training
+    monitor='val_loss',
+    patience=50,
+    restore_best_weights=True,
+    verbose=0
+)
+
+print("Inizio training...")
 history = model.fit(
-    X,
-    y,
-    epochs=2000,
-    batch_size=16,
-    validation_split=0.1,
-    callbacks=[early_stopping],
+    X_train,
+    y_train,
+    epochs=1000,
+    batch_size=32,
+    validation_split=0.1, # Prende il 10% di X_train per la validazione durante le epoche
+   # callbacks=[early_stopping],
     verbose=1
 )
 
-# Plotting training history
-plt.figure(0)
-plt.plot(history.history['loss'], label='Training Loss')
-plt.plot(history.history['val_loss'], label='Validation Loss')
-
-# Load test data and preprocess
-
-X_test = scaler_X.transform(X_test)
-y_test = scaler_Y.transform(y_test) 
-
-# Evaluate model on test data
-test_loss, test_mae = model.evaluate(X_test, y_test)
-y_pred = model.predict(X_test)
-
-y_pred_real = scaler_Y.inverse_transform(y_pred)
-y_test = scaler_Y.inverse_transform(y_test)
-
-# Calculate MEE
-mee = np.mean(np.linalg.norm(y_test - y_pred_real, axis=1))
-print("MEE:", mee)
-
-# Print test loss and MAE
-print(f"loss:{test_loss}, mae:{test_mae}")
-
-# Calculate and print range of y_test
-max_test = np.max(y_test)
-min_test = np.min(y_test)  
-delta_train = max_test - min_test
-print(max_test, min_test)
-print(f"delta train :{delta_train}")
-
-for i in [0, 1, 2, 3]:
-    score = np.mean(((y_test[:, i] - y_pred[:, i]))/(y_test[:,i]))
-    print(f"RMSE output {i+1}:", score)
-plt.figure(1)
-plt.scatter(y_test[:, 0], y_pred_real[:, 0], label="Output 1", alpha=0.5)
-plt.figure(2)
-plt.scatter(y_test[:, 1], y_pred_real[:, 1], label="Output 2", alpha=0.5)
-plt.figure(3)
-plt.scatter(y_test[:, 2], y_pred_real[:, 2], label="Output 3", alpha=0.5)
-plt.figure(4)
-plt.scatter(y_test[:, 3], y_pred_real[:, 3], label="Output 4", alpha=0.5)
-plt.xlabel("True Values")
-plt.ylabel("Predicted Values")
+# --- 5. GRAFICI ---
+plt.figure(figsize=(10, 5))
+plt.plot(history.history['loss'], label='Training Loss (MSE)')
+plt.plot(history.history['val_loss'], label='Validation Loss (MSE)')
+plt.title('Curve di apprendimento')
+plt.xlabel('Epoche')
+plt.ylabel('Loss (MSE)')
 plt.legend()
+plt.grid(True)
 plt.show()
 
-plt.show()
+# --- 6. VALUTAZIONE E MEE ---
+# Valutazione sui dati di test scalati
+results = model.evaluate(X_test, y_test_scaled, verbose=0)
+test_loss = results[0] # MSE
+test_mae = results[1]  # MAE
+
+# Predizione
+y_pred_scaled = model.predict(X_test)
+
+# Inversione dello scaling per tornare ai valori reali
+y_pred_real = scaler_Y.inverse_transform(y_pred_scaled)
+# Nota: y_test era l'originale non scalato, quindi usiamo quello per il confronto reale
+
+# Calcolo MEE (Mean Euclidean Error)
+# Calcola la distanza euclidea per ogni riga, poi fa la media
+mee = np.mean(np.linalg.norm(y_test - y_pred_real, axis=1))
+
+print(f"Test Loss (MSE Scaled): {test_loss:.4f}")
+print(f"Test MAE (Scaled):      {test_mae:.4f}")
+print(f"MEE (Errore Reale):     {mee:.4f}")
+
+
+# Statistiche sui dati
+max_test = np.max(y_test)
+min_test = np.min(y_test)
+delta_data = max_test - min_test
+print(f"Range dati reali: {min_test:.2f} - {max_test:.2f} (Delta: {delta_data:.2f})")
