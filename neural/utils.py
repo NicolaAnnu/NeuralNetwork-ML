@@ -68,12 +68,16 @@ def plot_curve(loss_curves, label):
 
 
 def target_plot(y_true, y_pred):
-    _, axes = plt.subplots(2, 2, figsize=(8, 5), dpi=150, constrained_layout=True)
+    _, axes = plt.subplots(2, 2, figsize=(10, 6), dpi=200, constrained_layout=True)
 
     for i, ax in enumerate(axes.flat):
         ax.scatter(y_pred[:, i], y_true[:, i], alpha=0.6)
-        ax.set_xlabel("predicted", fontsize=10)
-        ax.set_ylabel("target", fontsize=10)
-        ax.set_title(f"output {i + 1}", fontsize=10)
+        x = np.linspace(y_pred[:, i].min() - 0.5, y_pred[:, i].max() + 0.5, 5)
+        y = x
+        ax.plot(x, y, "g--", label="Ideal")
+        ax.set_xlabel("Predicted", fontsize=10)
+        ax.set_ylabel("Target", fontsize=10)
+        ax.set_title(f"Output {i + 1}", fontsize=10)
+        ax.legend()
 
     plt.show()

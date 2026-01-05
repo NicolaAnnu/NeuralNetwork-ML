@@ -75,7 +75,8 @@ if __name__ == "__main__":
 
     results = [r for r in results if np.isfinite(r["score"])]
     results = [r for r in results if np.isfinite(r["std"])]
-    results = [r for r in results if r["parameters"]["learning_rate"] <= 0.05]
+    results = [r for r in results if r["parameters"]["lam"] == 0.0]
+    results = [r for r in results if r["parameters"]["alpha"] == 0.0]
     best = sorted(results, key=lambda x: (x["score"], -x["std"]), reverse=True)[0]
     print(json.dumps(best["parameters"], indent=2))
     print(f"validation score: {best['score']:.2f}")
@@ -142,10 +143,13 @@ if __name__ == "__main__":
     plt.tight_layout()
     plt.show()
 
-    best["loss_curve"] = net.loss_curve
-    best["val_loss_curve"] = net.val_loss_curve
-    best["score_curve"] = net.score_curve
-    best["val_score_curve"] = net.val_score_curve
-
-    with open(f"results/monk{args.id}_curves.json", "w") as fp:
-        json.dump(best, fp, indent=2)
+    # curves = {
+    #     "id": f"monk{args.id}",
+    #     "loss": net.loss_curve,
+    #     "val_loss": net.val_loss_curve,
+    #     "score": net.score_curve,
+    #     "val_score": net.val_score_curve,
+    # }
+    #
+    # with open(f"results/curves/monk{args.id}.json", "w") as fp:
+    #     json.dump(curves, fp, indent=2)
