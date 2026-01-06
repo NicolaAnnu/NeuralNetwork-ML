@@ -67,23 +67,21 @@ model.compile(
 )
 
 # --- 4. TRAINING ---
-
 early_stopping = EarlyStopping(
     monitor='val_loss',
     patience=50,
     restore_best_weights=True,
     verbose=0
 )
-
 print("Inizio training...")
 history = model.fit(
     X_train,
     y_train,
-    epochs=1000,
+    epochs=2000,
     batch_size=32,
     validation_split=0.1, # Prende il 10% di X_train per la validazione durante le epoche
-   # callbacks=[early_stopping],
-    verbose=1
+    callbacks=[early_stopping],
+    verbose=0
 )
 
 # --- 5. GRAFICI ---
