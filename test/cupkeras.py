@@ -1,3 +1,5 @@
+import json
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -6,6 +8,7 @@ from keras import Sequential, regularizers
 from keras.callbacks import EarlyStopping
 from keras.layers import Dense, LeakyReLU
 from keras.optimizers import SGD
+from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
@@ -55,7 +58,7 @@ y_scaler = StandardScaler()
 y_train = y_scaler.fit_transform(y_train)
 y_test = np.asarray(y_scaler.transform(y_test))
 
-l2 = regularizers.l2(1e-4)
+l2 = regularizers.l2(1e-5)
 
 model = Sequential(
     [
@@ -69,11 +72,11 @@ model = Sequential(
     ]
 )
 
-optimizer = SGD(learning_rate=0.003, momentum=0.9, decay=0.0)
+optimizer = SGD(learning_rate=0.01, momentum=0.9, decay=0.0)
 
 model.compile(
     optimizer=optimizer,
-    loss=mean_euclidean_error,
+    loss="mse",
     metrics=[mean_euclidean_error],
 )
 
@@ -83,30 +86,39 @@ early_stopping = EarlyStopping(
     mode="min",
     patience=100,
     restore_best_weights=True,
-    verbose=1,
 )
 
 history = model.fit(
     X_train,
     y_train,
     validation_data=(X_test, y_test),
-    epochs=2000,
-    batch_size=32,
+    epochs=1500,
+    batch_size=16,
     shuffle=True,
     callbacks=[early_stopping],
 )
 
 
-y_pred = model.predict(X_test)
+y_train_pred = model.predict(X_train)
+y_test_pred = model.predict(X_test)
 
-y_pred = y_scaler.inverse_transform(y_pred)
-y_test = y_scaler.inverse_transform(y_test)
-mee = mean_euclidean_error(y_test, y_pred)
-print(f"MEE: {mee:.4f}")
+y_train_pred = y_scaler.inverse_transform(y_train_pred)
+y_test_pred = y_scaler.inverse_transform(y_test_pred)
+
+
+train_mse = mean_squared_error(y_train, y_train_pred)
+test_mse = mean_squared_error(y_test, y_test_pred)
+print(f"train MSE: {train_mse:.4f}")
+print(f"test MSE: {test_mse:.4f}")
+
+train_mee = mean_euclidean_error(y_train, y_train_pred)
+test_mee = mean_euclidean_error(y_test, y_test_pred)
+print(f"train MEE: {train_mee:.4f}")
+print(f"test MEE: {test_mee:.4f}")
 
 
 # Loss
-plt.figure(figsize=(6, 5), dpi=150)
+plt.figure(figsize=(6, 4), dpi=150)
 plt.title("Loss Curve")
 plt.plot(history.history["loss"], label="training")
 plt.plot(history.history["val_loss"], label="test")
@@ -118,7 +130,7 @@ plt.tight_layout()
 plt.show()
 
 # MEE
-plt.figure(figsize=(6, 5), dpi=150)
+plt.figure(figsize=(6, 4), dpi=150)
 plt.title("MEE Curve")
 plt.plot(history.history["mean_euclidean_error"], label="training")
 plt.plot(history.history["val_mean_euclidean_error"], label="test")
@@ -128,3 +140,18 @@ plt.legend()
 plt.grid()
 plt.tight_layout()
 plt.show()
+
+
+data = {
+    "loss": train_mse,
+    "val_loss": test_mse,
+    "loss_curve": list(history.history["loss"]),
+    "val_loss_curve": list(history.history["val_loss"]),
+    "score": float(train_mee),
+    "val_score": float(test_mee),
+    "score_curve": list(history.history["mean_euclidean_error"]),
+    "val_score_curve": list(history.history["val_mean_euclidean_error"]),
+}
+
+with open("results/curves/keras.json", "w") as fp:
+    json.dump(data, fp, indent=2)

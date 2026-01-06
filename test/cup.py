@@ -4,6 +4,7 @@ import json
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
@@ -100,8 +101,12 @@ if __name__ == "__main__":
     val_score_curves = []
     losses = []
     val_losses = []
+
+    train_mses = []
     train_mees = []
     train_r2s = []
+
+    test_mses = []
     test_mees = []
     test_r2s = []
 
@@ -144,6 +149,7 @@ if __name__ == "__main__":
         y_pred = net.predict(X_train)
         y_train_raw = y_scaler.inverse_transform(y_train)
         y_pred = y_scaler.inverse_transform(y_pred)
+        train_mses.append(np.mean((y_train_raw - y_pred) ** 2))
         train_mees.append(mean_euclidean_error(y_train_raw, y_pred))
         train_r2s.append(r2(y_train_raw, y_pred))
 
@@ -151,6 +157,8 @@ if __name__ == "__main__":
         y_pred = net.predict(X_test)
         y_test_raw = y_scaler.inverse_transform(y_test)
         y_pred = y_scaler.inverse_transform(y_pred)
+
+        test_mses.append(np.mean((y_test_raw - y_pred) ** 2))
         test_mees.append(mean_euclidean_error(y_test_raw, y_pred))
         test_r2s.append(r2(y_test_raw, y_pred))
 
@@ -158,12 +166,13 @@ if __name__ == "__main__":
     print(f"mean convergence in {np.mean(epochs, dtype=int)} epochs")
     print(f"mean loss: {np.mean(losses):.3f}")
     print(f"mean validation loss: {np.mean(val_losses):.3f}")
+
+    print(f"mean train MSE: {np.mean(train_mses):.3f}")
     print(f"mean train MEE: {np.mean(train_mees):.3f}")
     print(f"mean train R2: {np.mean(train_r2s):.3f}")
 
-    print(f"min test MEE: {np.min(test_mees):.3f}")
+    print(f"mean test MSE: {np.mean(test_mses):.3f}")
     print(f"mean test MEE: {np.mean(test_mees):.3f}")
-    print(f"max test MEE: {np.max(test_mees):.3f}")
     print(f"mean test R2: {np.mean(test_r2s):.3f}")
 
     plt.figure(figsize=(6, 5), dpi=150)
@@ -194,6 +203,6 @@ if __name__ == "__main__":
     # best["val_loss_curves"] = val_loss_curves
     # best["score_curves"] = score_curves
     # best["val_score_curves"] = val_score_curves
-    #
+
     # with open(f"results/cup_best.json", "w") as fp:
     #     json.dump(best, fp, indent=2)
