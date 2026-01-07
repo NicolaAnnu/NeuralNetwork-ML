@@ -20,23 +20,26 @@ class Layer:
         self.alpha = alpha
 
     def init_weights(self, n: int) -> None:
+        # init weights accordingly to activation function
         self.W = self.activation.init_weights(n, self.units)
         self.b = np.zeros(self.units)
 
-        # init momentum
+        # init momentum inertia to 0
         self.momentum_w = np.zeros_like(self.W)
         self.momentum_b = np.zeros_like(self.b)
 
     def store_best(self) -> None:
+        # store best weights
         self.best_W = self.W.copy()
         self.best_b = self.b.copy()
 
     def load_best(self) -> None:
+        # restore best weights
         self.W = self.best_W.copy()
         self.b = self.best_b.copy()
 
     def forward(self, X: np.ndarray) -> np.ndarray:
-        self.out = X
+        self.out = X  # save the output of the net for backprop
         self.net = X @ self.W + self.b
 
         return self.activation(self.net)

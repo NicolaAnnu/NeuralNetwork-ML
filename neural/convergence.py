@@ -17,6 +17,7 @@ class TrainLoss:
         if self.limit != -np.inf:
             return loss < self.limit
 
+        # if the loss does not change enough increase counter
         if abs(self.best_loss - loss) < 1e-5:
             self.counter += 1
         else:
@@ -47,6 +48,7 @@ class EarlyStopping:
         if self.limit != -np.inf:
             return loss < self.limit
 
+        # if the val loss is worst than best loss increase counter
         if self.best_loss > val_loss:
             self.best_loss = val_loss
             self.counter = 0

@@ -8,9 +8,9 @@ from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
-from neural.metrics import mean_euclidean_error, r2
+from neural.metrics import mean_euclidean_error
 from neural.network import Regressor
-from neural.utils import dump_results, load_results, plot_curve, retrain, target_plot
+from neural.utils import dump_results, load_results, target_plot
 from neural.validation import grid_search
 
 if __name__ == "__main__":
@@ -88,7 +88,7 @@ if __name__ == "__main__":
     else:
         results = load_results("results/cup.json")
 
-    results = [r for r in results if r["score"] != -np.inf]
+    results = [r for r in results if r["loss"] != np.inf]
     # results = [r for r in results if r["parameters"]["batch_size"] >= 200]
     best = sorted(results, key=lambda x: x["score"])[0]
     print(f"grid search score: {best['score']:.2f}")
@@ -97,122 +97,55 @@ if __name__ == "__main__":
 
     # re-train the model
     params = best["parameters"]
-    params["batch_size"] = 16
-    params["shuffle"] = True
-    params["learning_rate"] = 0.01
+    if params["convergence"] == "early_stopping":
+        params["limit"] = best["loss"]
+    print(json.dumps(params, indent=2))
 
-    from itertools import product
-
-    combs = product(["tanh", "relu", "leaky_relu"], [0.0, 1e-5, 1e-4])
+    net = Regressor(**params)
 
     X_scaler = StandardScaler()
     X_train = X_scaler.fit_transform(X_train)
     X_test = np.asarray(X_scaler.transform(X_test))
-    for i, c in enumerate(combs):
-        loss_curves = []
-        val_loss_curves = []
-        score_curves = []
-        val_score_curves = []
-        losses = []
-        val_losses = []
 
-        train_mses = []
-        train_mees = []
-        train_r2s = []
+    y_scaler = StandardScaler()
+    y_train = y_scaler.fit_transform(y_train)
+    y_test = np.asarray(y_scaler.transform(y_test))
 
-        test_mses = []
-        test_mees = []
-        test_r2s = []
+    net.fit(X_train, y_train, mean_euclidean_error, X_test, y_test)
+    y_pred_train = net.predict(X_train)
+    y_pred_test = net.predict(X_test)
 
-        params["activation"] = c[0]
-        params["lam"] = c[1]
+    y_train = y_scaler.inverse_transform(y_train)
+    y_test = y_scaler.inverse_transform(y_test)
+    y_pred_train = y_scaler.inverse_transform(y_pred_train)
+    y_pred_test = y_scaler.inverse_transform(y_pred_test)
 
-        print(json.dumps(params, indent=2))
+    print(f"train MSE: {mean_squared_error(y_train, y_pred_train):.3f}")
+    print(f"train MEE: {mean_euclidean_error(y_train, y_pred_train):.3f}")
 
-        y_scaler = StandardScaler()
-        y_train = y_scaler.fit_transform(y_train)
-        y_test = np.asarray(y_scaler.transform(y_test))
+    print(f"test MSE: {mean_squared_error(y_test, y_pred_test):.3f}")
+    print(f"test MEE: {mean_euclidean_error(y_test, y_pred_test):.3f}")
 
-        nets = retrain(
-            Regressor,
-            params,
-            X_train,
-            y_train,
-            X_test,
-            y_test,
-            mean_euclidean_error,
-            5,
-            args.dask,
-        )
+    plt.figure(figsize=(6, 4))
+    plt.title("Loss Curve")
+    plt.plot(net.loss_curve, label="training")
+    plt.plot(net.val_loss_curve, label="test")
+    plt.xlabel("Epochs")
+    plt.ylabel("Loss")
+    plt.legend()
+    plt.grid()
+    plt.tight_layout()
+    plt.show()
 
-        for net in nets:
-            loss_curves.append(net.loss_curve.copy())
-            val_loss_curves.append(net.val_loss_curve.copy())
-            score_curves.append(net.score_curve.copy())
-            val_score_curves.append(net.val_score_curve.copy())
-            losses.append(net.loss)
-            val_losses.append(net.val_loss)
+    plt.figure(figsize=(6, 4))
+    plt.title("MEE Curve")
+    plt.plot(net.score_curve, label="training")
+    plt.plot(net.val_score_curve, label="test")
+    plt.xlabel("Epochs")
+    plt.ylabel("MEE")
+    plt.legend()
+    plt.grid()
+    plt.tight_layout()
+    plt.show()
 
-            # training
-            y_pred = net.predict(X_train)
-            y_train_raw = y_scaler.inverse_transform(y_train)
-            y_pred = y_scaler.inverse_transform(y_pred)
-            train_mses.append(np.mean((y_train_raw - y_pred) ** 2))
-            train_mees.append(mean_euclidean_error(y_train_raw, y_pred))
-            train_r2s.append(r2(y_train_raw, y_pred))
-
-            # test
-            y_pred = net.predict(X_test)
-            y_test_raw = y_scaler.inverse_transform(y_test)
-            y_pred = y_scaler.inverse_transform(y_pred)
-
-            test_mses.append(np.mean((y_test_raw - y_pred) ** 2))
-            test_mees.append(mean_euclidean_error(y_test_raw, y_pred))
-            test_r2s.append(r2(y_test_raw, y_pred))
-
-        epochs = [len(lc) for lc in loss_curves]
-        print(f"mean convergence in {np.mean(epochs, dtype=int)} epochs")
-        print(f"mean loss: {np.mean(losses):.3f}")
-        print(f"mean validation loss: {np.mean(val_losses):.3f}")
-
-        print(f"mean train MSE: {np.mean(train_mses):.3f}")
-        print(f"mean train MEE: {np.mean(train_mees):.3f}")
-        print(f"mean train R2: {np.mean(train_r2s):.3f}")
-
-        print(f"mean test MSE: {np.mean(test_mses):.3f}")
-        print(f"min test MEE: {np.min(test_mees):.3f}")
-        print(f"mean test MEE: {np.mean(test_mees):.3f}")
-        print(f"max test MEE: {np.max(test_mees):.3f}")
-        print(f"mean test R2: {np.mean(test_r2s):.3f}")
-
-        # plt.figure(figsize=(6, 5), dpi=150)
-        # plt.title("Loss Curve")
-        # plot_curve(loss_curves, "training")
-        # plot_curve(val_loss_curves, "test")
-        # plt.xlabel("Epochs")
-        # plt.ylabel("Loss")
-        # plt.legend()
-        # plt.grid()
-        # plt.tight_layout()
-        # plt.show()
-        #
-        # plt.figure(figsize=(6, 5), dpi=150)
-        # plt.title("MEE Curve")
-        # plot_curve(score_curves, label="training")
-        # plot_curve(val_score_curves, label="test")
-        # plt.xlabel("Epochs")
-        # plt.ylabel("MEE")
-        # plt.legend()
-        # plt.grid()
-        # plt.tight_layout()
-        # plt.show()
-        #
-        # target_plot(y_test_raw, y_pred)
-
-        best["loss_curves"] = loss_curves
-        best["val_loss_curves"] = val_loss_curves
-        best["score_curves"] = score_curves
-        best["val_score_curves"] = val_score_curves
-
-        with open(f"results/curves/cup_0{i}.json", "w") as fp:
-            json.dump(best, fp, indent=2)
+    target_plot(y_test, y_pred_test)

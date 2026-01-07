@@ -9,6 +9,7 @@ from sklearn.preprocessing import StandardScaler
 from neural.network import Network
 
 
+# creates k folds of same size (some fold could differ for 1 element)
 def kfold(n, k):
     min_size = n // k
     carry = n % k
@@ -35,6 +36,7 @@ def train_and_score(
 ) -> dict:
     folds = kfold(X.shape[0], k)
 
+    # moving mask for validation split
     mask = np.array([False for _ in range(len(y))])
     scores = []
     losses = []
@@ -47,6 +49,7 @@ def train_and_score(
         X_train = X[~mask]
         y_train = y[~mask]
 
+        # perform a scaling only on TR split and use the same scaler for VL
         if scale:
             X_scaler = StandardScaler()
             X_train = X_scaler.fit_transform(X_train)
@@ -69,6 +72,7 @@ def train_and_score(
             loss = np.mean((y_val - predictions) ** 2)
             score = metric(y_val, predictions)
         except Exception:
+            # if one fold crashes
             return {
                 "score": np.nan,
                 "std": np.nan,
@@ -96,7 +100,7 @@ def grid_search(
     k: int,
     metric,
     scale: bool = False,
-    address: None | str = None,
+    address: None | str = None,  # for dask distributed grid search
     verbose: bool = False,
 ) -> list[dict]:
     # dask init
@@ -121,6 +125,8 @@ def grid_search(
     start = time.perf_counter()
     X_bc = client.scatter(X, broadcast=True)
     y_bc = client.scatter(y, broadcast=True)
+
+    # start parallel grid search
     futures = [
         client.submit(
             train_and_score, model, X_bc, y_bc, k, metric, scale, params, pure=False

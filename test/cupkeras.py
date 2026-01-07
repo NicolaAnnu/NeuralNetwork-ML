@@ -58,100 +58,117 @@ y_scaler = StandardScaler()
 y_train = y_scaler.fit_transform(y_train)
 y_test = np.asarray(y_scaler.transform(y_test))
 
-l2 = regularizers.l2(1e-5)
 
-model = Sequential(
-    [
-        Dense(64, input_shape=(X_train.shape[1],), kernel_regularizer=l2),
-        LeakyReLU(alpha=0.01),
-        Dense(64, kernel_regularizer=l2),
-        LeakyReLU(alpha=0.01),
-        Dense(64, kernel_regularizer=l2),
-        LeakyReLU(alpha=0.01),
-        Dense(4, kernel_regularizer=l2),  # output regressione 4D
-    ]
-)
+train_mses = []
+test_mses = []
 
-optimizer = SGD(learning_rate=0.01, momentum=0.9, decay=0.0)
+train_mees = []
+test_mees = []
 
-model.compile(
-    optimizer=optimizer,
-    loss="mse",
-    metrics=[mean_euclidean_error],
-)
+train_mse_curves = []
+test_mse_curves = []
+train_mee_curves = []
+test_mee_curves = []
 
+for i in range(10):
+    l2 = regularizers.l2(1e-5)
 
-early_stopping = EarlyStopping(
-    monitor="val_mean_euclidean_error",
-    mode="min",
-    patience=100,
-    restore_best_weights=True,
-)
+    model = Sequential(
+        [
+            Dense(64, input_shape=(X_train.shape[1],), kernel_regularizer=l2),
+            LeakyReLU(alpha=0.01),
+            Dense(64, kernel_regularizer=l2),
+            LeakyReLU(alpha=0.01),
+            Dense(64, kernel_regularizer=l2),
+            LeakyReLU(alpha=0.01),
+            Dense(4, kernel_regularizer=l2),  # output regressione 4D
+        ]
+    )
 
-history = model.fit(
-    X_train,
-    y_train,
-    validation_data=(X_test, y_test),
-    epochs=1500,
-    batch_size=16,
-    shuffle=True,
-    callbacks=[early_stopping],
-)
+    optimizer = SGD(learning_rate=0.01, momentum=0.9, decay=0.0)
 
+    model.compile(
+        optimizer=optimizer,
+        loss="mse",
+        metrics=[mean_euclidean_error],
+    )
 
-y_train_pred = model.predict(X_train)
-y_test_pred = model.predict(X_test)
+    early_stopping = EarlyStopping(
+        monitor="val_mean_euclidean_error",
+        mode="min",
+        patience=100,
+        restore_best_weights=True,
+    )
+    history = model.fit(
+        X_train,
+        y_train,
+        validation_data=(X_test, y_test),
+        epochs=1500,
+        batch_size=16,
+        shuffle=True,
+        callbacks=[early_stopping],
+    )
 
-y_train_pred = y_scaler.inverse_transform(y_train_pred)
-y_test_pred = y_scaler.inverse_transform(y_test_pred)
+    y_train_pred = model.predict(X_train)
+    y_test_pred = model.predict(X_test)
 
+    y_train_pred = y_scaler.inverse_transform(y_train_pred)
+    y_test_pred = y_scaler.inverse_transform(y_test_pred)
 
-train_mse = mean_squared_error(y_train, y_train_pred)
-test_mse = mean_squared_error(y_test, y_test_pred)
-print(f"train MSE: {train_mse:.4f}")
-print(f"test MSE: {test_mse:.4f}")
+    y_train_raw = y_scaler.inverse_transform(y_train)
+    y_test_raw = y_scaler.inverse_transform(y_test)
 
-train_mee = mean_euclidean_error(y_train, y_train_pred)
-test_mee = mean_euclidean_error(y_test, y_test_pred)
-print(f"train MEE: {train_mee:.4f}")
-print(f"test MEE: {test_mee:.4f}")
+    train_mse = mean_squared_error(y_train_raw, y_train_pred)
+    test_mse = mean_squared_error(y_test_raw, y_test_pred)
+    train_mses.append(train_mse)
+    test_mses.append(test_mse)
 
+    train_mee = mean_euclidean_error(y_train_raw, y_train_pred).numpy().item()
+    test_mee = mean_euclidean_error(y_test_raw, y_test_pred).numpy().item()
+    train_mees.append(train_mee)
+    test_mees.append(test_mee)
 
-# Loss
-plt.figure(figsize=(6, 4), dpi=150)
-plt.title("Loss Curve")
-plt.plot(history.history["loss"], label="training")
-plt.plot(history.history["val_loss"], label="test")
-plt.xlabel("Epochs")
-plt.ylabel("Loss")
-plt.legend()
-plt.grid()
-plt.tight_layout()
-plt.show()
+    train_mse_curves.append(list(history.history["loss"]))
+    test_mse_curves.append(list(history.history["val_loss"]))
 
-# MEE
-plt.figure(figsize=(6, 4), dpi=150)
-plt.title("MEE Curve")
-plt.plot(history.history["mean_euclidean_error"], label="training")
-plt.plot(history.history["val_mean_euclidean_error"], label="test")
-plt.xlabel("Epochs")
-plt.ylabel("MEE")
-plt.legend()
-plt.grid()
-plt.tight_layout()
-plt.show()
-
+    train_mee_curves.append(list(history.history["mean_euclidean_error"]))
+    test_mee_curves.append(list(history.history["val_mean_euclidean_error"]))
 
 data = {
-    "loss": train_mse,
-    "val_loss": test_mse,
-    "loss_curve": list(history.history["loss"]),
-    "val_loss_curve": list(history.history["val_loss"]),
-    "score": float(train_mee),
-    "val_score": float(test_mee),
-    "score_curve": list(history.history["mean_euclidean_error"]),
-    "val_score_curve": list(history.history["val_mean_euclidean_error"]),
+    "loss": np.mean(train_mses),
+    "val_loss": np.mean(test_mses),
+    "loss_curve": train_mse_curves,
+    "val_loss_curve": test_mse_curves,
+    "score": np.mean(train_mees),
+    "val_score": np.mean(test_mees),
+    "score_curve": train_mee_curves,
+    "val_score_curve": test_mee_curves,
 }
 
 with open("results/curves/keras.json", "w") as fp:
     json.dump(data, fp, indent=2)
+
+
+# # Loss
+# plt.figure(figsize=(6, 4), dpi=150)
+# plt.title("Loss Curve")
+# plt.plot(history.history["loss"], label="training")
+# plt.plot(history.history["val_loss"], label="test")
+# plt.xlabel("Epochs")
+# plt.ylabel("Loss")
+# plt.legend()
+# plt.grid()
+# plt.tight_layout()
+# plt.show()
+
+# # MEE
+# plt.figure(figsize=(6, 4), dpi=150)
+# plt.title("MEE Curve")
+# plt.plot(history.history["mean_euclidean_error"], label="training")
+# plt.plot(history.history["val_mean_euclidean_error"], label="test")
+# plt.xlabel("Epochs")
+# plt.ylabel("MEE")
+# plt.legend()
+# plt.grid()
+# plt.tight_layout()
+# plt.show()

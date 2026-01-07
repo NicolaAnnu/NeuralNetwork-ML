@@ -97,7 +97,7 @@ class Network:
                 # backpropagation
                 self.backward(2 * error / error.shape[1])
 
-            # training loss and score
+            # training loss and score tracking
             out = self.forward(X)
             loss = np.mean((out - y) ** 2)
             self.loss_curve.append(loss)
@@ -106,7 +106,9 @@ class Network:
             score = metric(y, pred)
             self.score_curve.append(score)
 
-            # validation loss and score
+            # validation loss and score tracking
+            val_loss = None
+            val_score = None
             if X_val is not None:
                 out = self.forward(X_val)
                 val_loss = np.mean((out - y_val) ** 2)
@@ -127,6 +129,7 @@ class Network:
                     for layer in self.layers:
                         layer.load_best()
 
+                    # cut curves after best epoch
                     if best_epoch > 0:
                         self.loss_curve = self.loss_curve[:best_epoch]
                         self.val_loss_curve = self.val_loss_curve[:best_epoch]
