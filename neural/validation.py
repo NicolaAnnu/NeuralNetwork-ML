@@ -66,6 +66,7 @@ def train_and_score(
                 y_val = y_scaler.inverse_transform(y_val)
                 predictions = y_scaler.inverse_transform(predictions)
 
+            loss = np.mean((y_val - predictions) ** 2)
             score = metric(y_val, predictions)
         except Exception:
             return {
@@ -76,7 +77,7 @@ def train_and_score(
             }
 
         scores.append(score)
-        losses.append(net.loss)
+        losses.append(loss)
         mask[start:end] = False
 
     return {
