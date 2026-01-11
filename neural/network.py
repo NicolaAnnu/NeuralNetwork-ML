@@ -15,6 +15,7 @@ class Network:
         shuffle: bool = False,
         batch_size: int = 64,
         convergence: str = "train_loss",
+        tol: float = 1e-5,
         patience: int = 10,
         limit: float = -np.inf,
         max_iter: int = 500,
@@ -39,7 +40,7 @@ class Network:
         self.batch_size = batch_size
 
         criteria = methods[convergence]
-        self.convergence = criteria(patience, limit)
+        self.convergence = criteria(tol, patience, limit)
         self.patience = patience
         self.limit = limit
 
@@ -161,6 +162,7 @@ class Classifier(Network):
         shuffle: bool = False,
         batch_size: int = 64,
         convergence: str = "train_loss",
+        tol: float = 1e-5,
         patience: int = 10,
         limit: float = -np.inf,
         max_iter: int = 500,
@@ -174,6 +176,7 @@ class Classifier(Network):
             shuffle=shuffle,
             batch_size=batch_size,
             convergence=convergence,
+            tol=tol,
             patience=patience,
             limit=limit,
             max_iter=max_iter,
@@ -220,6 +223,7 @@ class Regressor(Network):
         shuffle: bool = False,
         batch_size: int = 64,
         convergence: str = "train_loss",
+        tol: float = 1e-5,
         patience: int = 10,
         limit: float = -np.inf,
         max_iter: int = 500,
@@ -233,6 +237,7 @@ class Regressor(Network):
             shuffle=shuffle,
             batch_size=batch_size,
             convergence=convergence,
+            tol=tol,
             patience=patience,
             limit=limit,
             max_iter=max_iter,
