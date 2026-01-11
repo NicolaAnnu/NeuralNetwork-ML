@@ -34,10 +34,9 @@ class Layer:
         self.best_b = self.b.copy()
 
     def load_best(self) -> None:
-        if hasattr(self, "best_W") and hasattr(self, "best_b"):
-            # restore best weights
-            self.W = self.best_W.copy()
-            self.b = self.best_b.copy()
+        # restore best weights
+        self.W = self.best_W.copy()
+        self.b = self.best_b.copy()
 
     def forward(self, X: np.ndarray) -> np.ndarray:
         self.out = X  # save the output of the net for backprop

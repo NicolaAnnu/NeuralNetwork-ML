@@ -75,6 +75,8 @@ if __name__ == "__main__":
 
     results = [r for r in results if np.isfinite(r["score"])]
     results = [r for r in results if np.isfinite(r["std"])]
+    # results = [r for r in results if r["parameters"]["lam"] == 0.0]
+    # results = [r for r in results if r["parameters"]["alpha"] == 0.0]
     best = sorted(results, key=lambda x: (x["score"], -x["std"]), reverse=True)[0]
     print(json.dumps(best["parameters"], indent=2))
     print(f"validation score: {best['score']:.2f}")

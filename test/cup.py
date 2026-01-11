@@ -60,15 +60,14 @@ if __name__ == "__main__":
         hyperparams = {
             "hidden_layer_sizes": [(64, 64, 64)],
             "activation": ["leaky_relu"],
-            "learning_rate": [0.005, 0.01],
-            "lam": [0.0, 0.0001],
+            "learning_rate": [0.001, 0.005, 0.01],
+            "lam": [0.0001],
             "alpha": [0.9],
             "shuffle": [True],
-            "batch_size": [16, -1],
-            "convergence": ["train_loss", "early_stopping"],
-            "tol": [1e-5],
+            "batch_size": [16, 64, 256],
+            "convergence": ["train_loss"],
             "patience": [50],
-            "max_iter": [2000],
+            "max_iter": [3000],
         }
 
         results = grid_search(
@@ -127,7 +126,7 @@ if __name__ == "__main__":
     print(f"test MSE: {mean_squared_error(y_test, y_pred_test):.3f}")
     print(f"test MEE: {mean_euclidean_error(y_test, y_pred_test):.3f}")
 
-    plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(6, 4))
     plt.title("Loss Curve")
     plt.plot(net.loss_curve, label="training")
     plt.plot(net.val_loss_curve, label="test")
@@ -138,7 +137,7 @@ if __name__ == "__main__":
     plt.tight_layout()
     plt.show()
 
-    plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(6, 4))
     plt.title("MEE Curve")
     plt.plot(net.score_curve, label="training")
     plt.plot(net.val_score_curve, label="test")

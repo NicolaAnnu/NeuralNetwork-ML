@@ -4,11 +4,9 @@ import numpy as np
 class TrainLoss:
     def __init__(
         self,
-        tol: float = 1e-5,
         patience: int = 10,
         limit: float = -np.inf,
     ) -> None:
-        self.tol = tol
         self.patience = patience
         self.limit = limit
 
@@ -20,11 +18,12 @@ class TrainLoss:
             return loss < self.limit
 
         # if the loss does not change enough increase counter
-        if self.best_loss - loss > self.tol:
-            self.best_loss = loss
-            self.counter = 0
-        else:
+        if abs(self.best_loss - loss) < 1e-5:
             self.counter += 1
+        else:
+            if loss < self.best_loss:
+                self.best_loss = loss
+                self.counter = 0
 
         return self.counter >= self.patience
 
@@ -36,11 +35,9 @@ class TrainLoss:
 class EarlyStopping:
     def __init__(
         self,
-        tol: float = 0.0,
         patience: int = 10,
         limit: float = -np.inf,
     ) -> None:
-        self.tol = tol
         self.patience = patience
         self.limit = limit
 
@@ -52,7 +49,7 @@ class EarlyStopping:
             return loss < self.limit
 
         # if the val loss is worst than best loss increase counter
-        if self.best_loss - val_loss > self.tol:
+        if self.best_loss > val_loss:
             self.best_loss = val_loss
             self.counter = 0
         else:
