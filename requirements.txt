@@ -6,14 +6,8 @@ matplotlib
 pandas
 scipy
 scikit-learn
-tensorflow
-keras
 tqdm
 ucimlrepo
 ipykernel
 notebook
 jupyterlab
-
-# install pytorch without cuda
---extra-index-url https://download.pytorch.org/whl/cpu
-torch
