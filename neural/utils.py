@@ -68,7 +68,7 @@ def plot_curve(loss_curves, label):
 
 
 def target_plot(y_true, y_pred):
-    _, axes = plt.subplots(2, 2, figsize=(8, 4), dpi=150, constrained_layout=True)
+    _, axes = plt.subplots(2, 2, figsize=(8, 5), dpi=150, constrained_layout=True)
 
     for i, ax in enumerate(axes.flat):
         ax.scatter(y_pred[:, i], y_true[:, i], alpha=0.6)
