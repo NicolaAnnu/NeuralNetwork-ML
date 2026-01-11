@@ -71,6 +71,10 @@ def train_and_score(
 
             loss = np.mean((y_val - predictions) ** 2)
             score = metric(y_val, predictions)
+
+            if net.stopping.restore_weights:
+                params["limit"] = net.loss
+
         except Exception:
             # if one fold crashes
             return {

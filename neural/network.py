@@ -1,6 +1,6 @@
 import numpy as np
 
-from neural.convergence import methods
+from neural.convergence import get_criteria
 from neural.layer import Layer
 
 
@@ -39,10 +39,11 @@ class Network:
         self.shuffle = shuffle
         self.batch_size = batch_size
 
-        criteria = methods[convergence]
-        self.convergence = criteria(tol, patience, limit)
+        self.convergence = convergence
+        self.tol = tol
         self.patience = patience
         self.limit = limit
+        self.stopping = get_criteria(convergence, tol, patience, limit)
 
         self.max_iter = max_iter
 
@@ -120,13 +121,13 @@ class Network:
                 self.val_score_curve.append(val_score)
 
             # convergence
-            if not self.convergence.should_stop(loss, val_loss):
-                if self.convergence.restore_weights and self.convergence.counter == 0:
+            if not self.stopping.should_stop(loss, val_loss):
+                if self.stopping.restore_weights and self.stopping.counter == 0:
                     best_epoch = epoch
                     for layer in self.layers:
                         layer.store_best()
             else:
-                if self.convergence.restore_weights:
+                if self.stopping.restore_weights:
                     for layer in self.layers:
                         layer.load_best()
 

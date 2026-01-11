@@ -65,7 +65,10 @@ class EarlyStopping:
         return True
 
 
-methods = {
-    "train_loss": TrainLoss,
-    "early_stopping": EarlyStopping,
-}
+def get_criteria(method: str, tol: float, patience: int, limit: float):
+    criterias = {
+        "train_loss": TrainLoss,
+        "early_stopping": EarlyStopping,
+    }
+
+    return criterias[method](tol, patience, limit)

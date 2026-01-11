@@ -59,15 +59,15 @@ if __name__ == "__main__":
     if args.gs:
         hyperparams = {
             "hidden_layer_sizes": [(64, 64, 64)],
-            "activation": ["leaky_relu"],
-            "learning_rate": [0.005, 0.01],
+            "activation": ["relu", "leaky_relu"],
+            "learning_rate": [0.001, 0.005, 0.01],
             "lam": [0.0, 0.0001],
-            "alpha": [0.9],
-            "shuffle": [True],
-            "batch_size": [16, -1],
+            "alpha": [0.5, 0.9],
+            "shuffle": [False, True],
+            "batch_size": [16, 64],
             "convergence": ["train_loss", "early_stopping"],
-            "tol": [1e-5],
-            "patience": [50],
+            "tol": [0.0, 1e-5],
+            "patience": [100],
             "max_iter": [2000],
         }
 
@@ -90,7 +90,6 @@ if __name__ == "__main__":
         results = load_results("results/cup.json")
 
     results = [r for r in results if r["loss"] != np.inf]
-    # results = [r for r in results if r["parameters"]["batch_size"] >= 200]
     best = sorted(results, key=lambda x: x["score"])[0]
     print(f"grid search score: {best['score']:.2f}")
     print(f"grid search std score: {best['std']:.2f}")
@@ -98,8 +97,6 @@ if __name__ == "__main__":
 
     # re-train the model
     params = best["parameters"]
-    if params["convergence"] == "early_stopping":
-        params["limit"] = best["loss"]
     print(json.dumps(params, indent=2))
 
     net = Regressor(**params)
