@@ -59,7 +59,7 @@ class Layer:
         delta_b = self.learning_rate * gradient_b
 
         # regularization term
-        penalty = self.learning_rate * self.lam * self.W
+        penalty = self.lam * self.W
 
         # momentum terms
         self.momentum_w = self.alpha * self.momentum_w + delta_w
