@@ -83,9 +83,14 @@ if __name__ == "__main__":
     params = best["parameters"]
     print(json.dumps(params, indent=2))
 
+    def accuracy_one_hot(y_true, y_pred):
+        # y_true è one-hot, y_pred sono classi
+        y_true_cls = np.argmax(y_true, axis=1)
+        return accuracy_score(y_true_cls, y_pred)
+
     # re-train the model
     net = Classifier(**params)
-    net.fit(X_train, y_train, accuracy_score, X_val=X_test, y_val=y_test)
+    net.fit(X_train, y_train, accuracy_one_hot, X_val=X_test, y_val=y_test)
 
     print(f"converged in {len(net.loss_curve)} epochs")
     print(f"training loss: {net.loss:.4f}")
