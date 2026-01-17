@@ -1,4 +1,6 @@
 import numpy as np
+from sklearn.preprocessing import OneHotEncoder
+from tqdm import trange
 
 from neural.convergence import get_criteria
 from neural.layer import Layer
@@ -86,7 +88,7 @@ class Network:
         self.val_score_curve = []
 
         best_epoch = 0
-        for epoch in range(self.max_iter):
+        for epoch in trange(self.max_iter, ncols=80, desc="training progress"):
             # shuffle the indices
             if self.shuffle:
                 np.random.shuffle(indices)
@@ -194,14 +196,17 @@ class Classifier(Network):
         if len(y.shape) == 1:
             y = y.reshape(-1, 1)
 
-        if y_val is not None:
-            if len(y_val.shape) == 1:
-                y_val = y_val.reshape(-1, 1)
+        self.encoder = OneHotEncoder(sparse_output=False)
+        y = self.encoder.fit_transform(y)
+
+        if y_val is not None and len(y_val.shape) == 1:
+            y_val = y_val.reshape(-1, 1)
+            y_val = np.asarray(self.encoder.transform(y_val))
 
         # add output layer with one logistic unit
         output = Layer(
-            units=1,
-            activation="logistic",
+            units=y.shape[1],
+            activation="linear",
             learning_rate=self.learning_rate,
             lam=self.lam,
             alpha=self.alpha,
@@ -209,8 +214,9 @@ class Classifier(Network):
         self.layers.append(output)
         super().fit(X, y, metric, X_val, y_val)
 
-    def predict(self, X: np.ndarray) -> np.ndarray:
-        return np.round(self.forward(X)[:, 0])
+    def predict(self, X):
+        y_hat = self.forward(X)  # (n_samples, K)
+        return np.argmax(y_hat, axis=1)
 
 
 class Regressor(Network):
