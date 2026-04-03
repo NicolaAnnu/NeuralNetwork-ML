@@ -4,9 +4,11 @@ from pathlib import Path
 from typing import Optional
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
+from sklearn.compose import TransformedTargetRegressor
 from sklearn.metrics import mean_squared_error
-from sklearn.model_selection import GridSearchCV, KFold
+from sklearn.model_selection import GridSearchCV, KFold, train_test_split
 from sklearn.neural_network import MLPRegressor
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
@@ -19,33 +21,32 @@ PARAM_GRID = {
     "hidden_layer_sizes": [(32,), (64,), (64, 32)],
     "activation": ["tanh"],
     "output_activation": ["linear"],
-    "learning_rate": [0.001, 0.01],
+    "learning_rate": [0.001, 0.01, 0.0001],
     "lam": [0.0, 0.0001],
     "alpha": [0.9],
     "tol": [1e-5],
-    "batch_size": [32, 64],
-    "max_iter": [1000, 2000, 3000],  # più epoche possibili
+    "batch_size": [8,16, 32, 64],
+    "max_iter": [500, 1000, 2000, 3000],  # piu epoche possibili
     "n_iter_no_change": [200],  # evita early stop precoce
 }
 
 
 PARAM_KEY_MAP = {
-    "hidden_layer_sizes": "model__hidden_layer_sizes",
-    "activation": "model__activation",
-    "learning_rate": "model__learning_rate_init",
-    "lam": "model__alpha",  # L2 regularization
-    "alpha": "model__momentum",  # momentum
-    "tol": "model__tol",
-    "batch_size": "model__batch_size",
-    "max_iter": "model__max_iter",
-    "n_iter_no_change": "model__n_iter_no_change",
-    "shuffle": "model__shuffle",
+    "hidden_layer_sizes": "model__regressor__hidden_layer_sizes",
+    "activation": "model__regressor__activation",
+    "learning_rate": "model__regressor__learning_rate_init",
+    "lam": "model__regressor__alpha",  # L2 regularization
+    "alpha": "model__regressor__momentum",  # momentum
+    "tol": "model__regressor__tol",
+    "batch_size": "model__regressor__batch_size",
+    "max_iter": "model__regressor__max_iter",
+    "n_iter_no_change": "model__regressor__n_iter_no_change",
+    "shuffle": "model__regressor__shuffle",
     "output_activation": None,
 }
 
 
 def normalize_params(params: dict) -> dict:
-    """Map custom keys to pipeline namespaced keys (model__*, scaler__*)."""
     normalized = {}
     for key, value in params.items():
         if key.startswith("model__") or key.startswith("scaler__"):
@@ -61,7 +62,6 @@ def normalize_params(params: dict) -> dict:
 
 
 def load_cup_data():
-    """Load CUP data: 12 features + 4 targets for train, only features for test."""
     train = pd.read_csv("datasets/ml_cup_train.csv", header=None)
     test = pd.read_csv("datasets/ml_cup_test.csv", header=None)
 
@@ -75,16 +75,32 @@ def load_cup_data():
 
 
 def build_pipeline(params: Optional[dict] = None) -> Pipeline:
+    base_mlp = MLPRegressor(
+        hidden_layer_sizes=(128, 64, 32),
+        activation="relu",
+        solver="adam",
+        learning_rate="adaptive",
+        learning_rate_init=5e-4,
+        batch_size=64,
+        alpha=1e-4,
+        max_iter=4000,
+        n_iter_no_change=50,
+        tol=1e-6,
+        random_state=42,
+        shuffle=True,
+        early_stopping=True,
+        validation_fraction=0.15,
+    )
+
     pipeline = Pipeline(
         [
             ("scaler", StandardScaler()),
             (
                 "model",
-                MLPRegressor(
-                    solver="sgd",
-                    learning_rate="constant",
-                    random_state=42,
-                    shuffle=False,  # per coerenza con la rete custom (default False)
+                TransformedTargetRegressor(
+                    regressor=base_mlp,
+                    transformer=StandardScaler(),
+                    check_inverse=False,
                 ),
             ),
         ]
@@ -122,15 +138,45 @@ def save_results(params: dict, cv_rmse: Optional[float], train_rmse: float) -> N
         )
 
 
-def plot_loss_curve(model: Pipeline) -> None:
-    mlp = model.named_steps["model"]
-    if not hasattr(mlp, "loss_curve_"):
+def plot_loss_curve(
+    model: Pipeline, X_train: Optional[np.ndarray] = None, y_train: Optional[np.ndarray] = None
+) -> None:
+    tt = model.named_steps["model"]
+    mlp = getattr(tt, "regressor_", getattr(tt, "regressor", None))
+    if mlp is None or not hasattr(mlp, "loss_curve_"):
         return
-    plt.title("CUP Loss Curve (sklearn MLPRegressor)")
-    plt.plot(mlp.loss_curve_, label="training loss")
+
+    # sklearn stores half-MSE; rescale to MSE for comparison with validation loss
+    train_mse_curve = [loss * 2 for loss in mlp.loss_curve_]
+
+    plt.title("Curve di Apprendimento")
+    plt.plot(train_mse_curve, label="training MSE", color="tab:blue")
+
+    val_scores = getattr(mlp, "validation_scores_", None)
+    if val_scores and X_train is not None and y_train is not None:
+        _, _, _, y_val = train_test_split(
+            X_train,
+            y_train,
+            test_size=mlp.validation_fraction,
+            random_state=mlp.random_state,
+            shuffle=mlp.shuffle,
+        )
+        y_transformer = getattr(tt, "transformer_", None)
+        if y_transformer is not None:
+            y_val_scaled = y_transformer.transform(y_val)
+            sst = ((y_val_scaled - y_val_scaled.mean(axis=0)) ** 2).sum()
+            if sst != 0:
+                val_mse_scaled = [(1 - r2) * sst / len(y_val_scaled) for r2 in val_scores]
+                plt.plot(val_mse_scaled, label="validation MSE (scaled target)", color="tab:orange")
+        else:
+            plt.plot(val_scores, label="validation score (R2)", color="tab:orange")
+    elif val_scores:
+        plt.plot(val_scores, label="validation score (R2)", color="tab:orange")
+
     plt.xlabel("Epochs")
-    plt.ylabel("MSE loss")
-    plt.legend()
+    plt.ylabel("MSE")
+    plt.legend(loc="best")
+    plt.grid(True)
     plt.tight_layout()
     plt.show()
 
@@ -178,8 +224,9 @@ if __name__ == "__main__":
         cv_rmse = None
 
     train_pred = model.predict(X_train)
-    train_rmse = mean_squared_error(y_train, train_pred) ** 0.5
-    print(f"train RMSE: {train_rmse:.4f}")
+    train_mse = mean_squared_error(y_train, train_pred)
+    train_rmse = train_mse ** 0.5
+    print(f"train MSE: {train_mse:.6f} | RMSE: {train_rmse:.4f}")
 
     test_pred = model.predict(X_test)
     test_df = pd.DataFrame(
@@ -192,4 +239,4 @@ if __name__ == "__main__":
         test_df.to_csv(PREDICTIONS_PATH, index=False)
         print(f"saved results to {RESULTS_PATH} and predictions to {PREDICTIONS_PATH}")
 
-    plot_loss_curve(model)
+    plot_loss_curve(model, X_train, y_train)
