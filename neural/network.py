@@ -1,9 +1,6 @@
 import numpy as np
-<<<<<<< HEAD
 from sklearn.preprocessing import OneHotEncoder
 from tqdm import trange
-=======
->>>>>>> main
 
 from neural.convergence import get_criteria
 from neural.layer import Layer
@@ -14,7 +11,6 @@ class Network:
         self,
         hidden_layer_sizes=(100,),
         activation: str = "logistic",
-<<<<<<< HEAD
         learning_rate: float = 0.01,
         lam: float = 0.0001,
         alpha: float = 0.5,
@@ -25,17 +21,6 @@ class Network:
         patience: int = 10,
         limit: float = -np.inf,
         max_iter: int = 500,
-=======
-        learning_rate: float = 0.1,
-        lam: float = 0.0001,  # regularization
-        alpha: float = 0.5,  # momentum
-        tol: float = 1e-4,
-        batch_size: int = 10,
-        shuffle: bool = False,
-        early_stopping: bool = False,
-        validation_fraction: float = 0.1,
-        max_iter: int = 200,
->>>>>>> main
     ) -> None:
         self.hidden_layer_sizes = hidden_layer_sizes
         self.layers = [
@@ -53,7 +38,6 @@ class Network:
         self.learning_rate = learning_rate
         self.lam = lam
         self.alpha = alpha
-<<<<<<< HEAD
         self.shuffle = shuffle
         self.batch_size = batch_size
 
@@ -63,13 +47,6 @@ class Network:
         self.limit = limit
         self.stopping = get_criteria(convergence, tol, patience, limit)
 
-=======
-        self.tol = tol
-        self.batch_size = batch_size
-        self.shuffle = shuffle
-        self.early_stopping = early_stopping
-        self.validation_fraction = validation_fraction
->>>>>>> main
         self.max_iter = max_iter
 
     def init_weights(self, input_size):
@@ -112,7 +89,6 @@ class Network:
         indices = np.arange(X.shape[0])
 
         self.loss_curve = []
-<<<<<<< HEAD
         self.score_curve = []
         self.val_loss_curve = []
         self.val_score_curve = []
@@ -174,36 +150,6 @@ class Network:
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         return self.forward(X)
-=======
-        best_loss = np.inf
-        stop_counter = 0
-        for _ in range(self.max_iter):
-            # shuffle the indices
-            if self.shuffle:
-                np.random.shuffle(indices)
-
-            epoch_loss = 0.0
-            for i in range(0, len(y), self.batch_size):
-                batch_idx = indices[i : i + self.batch_size]
-                out = self.forward(X[batch_idx])
-                error = out - y[batch_idx].reshape(-1, 1)
-
-                # backpropagation
-                self.backward(2 * error / len(batch_idx))
-                epoch_loss += np.sum(error**2)
-
-            self.loss_curve.append(epoch_loss / len(y))
-
-            # stopping criteria
-            if (best_loss - self.loss_curve[-1]) < self.tol:
-                stop_counter += 1
-            else:
-                best_loss = self.loss_curve[-1]
-                stop_counter = 0
-
-            if stop_counter == 10:
-                break
->>>>>>> main
 
     @property
     def loss(self) -> float:
@@ -222,7 +168,6 @@ class Classifier(Network):
         learning_rate: float = 0.01,
         lam: float = 0.0001,
         alpha: float = 0.5,
-<<<<<<< HEAD
         shuffle: bool = False,
         batch_size: int = 64,
         convergence: str = "train_loss",
@@ -230,14 +175,6 @@ class Classifier(Network):
         patience: int = 10,
         limit: float = -np.inf,
         max_iter: int = 500,
-=======
-        tol: float = 1e-4,
-        batch_size: int = 10,
-        shuffle: bool = False,
-        early_stopping: bool = False,
-        validation_fraction: float = 0.1,
-        max_iter: int = 200,
->>>>>>> main
     ) -> None:
         super().__init__(
             hidden_layer_sizes=hidden_layer_sizes,
@@ -245,20 +182,12 @@ class Classifier(Network):
             learning_rate=learning_rate,
             lam=lam,
             alpha=alpha,
-<<<<<<< HEAD
             shuffle=shuffle,
             batch_size=batch_size,
             convergence=convergence,
             tol=tol,
             patience=patience,
             limit=limit,
-=======
-            tol=tol,
-            batch_size=batch_size,
-            shuffle=shuffle,
-            early_stopping=early_stopping,
-            validation_fraction=validation_fraction,
->>>>>>> main
             max_iter=max_iter,
         )
 
@@ -304,7 +233,6 @@ class Regressor(Network):
         learning_rate: float = 0.01,
         lam: float = 0.0001,
         alpha: float = 0.5,
-<<<<<<< HEAD
         shuffle: bool = False,
         batch_size: int = 64,
         convergence: str = "train_loss",
@@ -312,14 +240,6 @@ class Regressor(Network):
         patience: int = 10,
         limit: float = -np.inf,
         max_iter: int = 500,
-=======
-        tol: float = 1e-4,
-        batch_size: int = 10,
-        shuffle: bool = False,
-        early_stopping: bool = False,
-        validation_fraction: float = 0.1,
-        max_iter: int = 200,
->>>>>>> main
     ) -> None:
         super().__init__(
             hidden_layer_sizes=hidden_layer_sizes,
@@ -327,20 +247,12 @@ class Regressor(Network):
             learning_rate=learning_rate,
             lam=lam,
             alpha=alpha,
-<<<<<<< HEAD
             shuffle=shuffle,
             batch_size=batch_size,
             convergence=convergence,
             tol=tol,
             patience=patience,
             limit=limit,
-=======
-            tol=tol,
-            batch_size=batch_size,
-            shuffle=shuffle,
-            early_stopping=early_stopping,
-            validation_fraction=validation_fraction,
->>>>>>> main
             max_iter=max_iter,
         )
 
