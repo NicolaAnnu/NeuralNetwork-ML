@@ -27,6 +27,7 @@ if __name__ == "__main__":
     X_train = encoder.fit_transform(X_train)
     X_test = encoder.transform(X_test)
 
+<<<<<<< HEAD
     hyperparams = {
         "hidden_layer_sizes": [(3,)],
         "activation": ["logistic", "tanh"],
@@ -66,6 +67,25 @@ if __name__ == "__main__":
         train_score,
         test_score,
         f"results/monk{args.id}.json",
+=======
+    topology = (3,)
+    activation = "tanh"
+    learning_rate = 0.3
+    lam = 0.0001
+    alpha = 0.9
+    batch_size = 10
+    max_iter = 1000
+
+    net = Classifier(
+        hidden_layer_sizes=topology,
+        activation=activation,
+        learning_rate=learning_rate,
+        lam=lam,
+        alpha=alpha,
+        batch_size=-1,
+        shuffle=True,
+        max_iter=max_iter,
+>>>>>>> main
     )
 
     plt.title("Loss Curve")
@@ -73,5 +93,28 @@ if __name__ == "__main__":
     plt.xlabel("Epochs")
     plt.ylabel("Loss")
     plt.legend()
+<<<<<<< HEAD
     plt.tight_layout()
     plt.show()
+=======
+    plt.show()
+    
+    # Network
+    net_pred = net.predict(X_train)
+    accuracy = np.mean(net_pred == y_train)
+    print(f"network train accuracy: {accuracy:.2f}")
+
+    mlp_pred = mlp.predict(X_train)
+    accuracy = np.mean(mlp_pred == y_train)
+    print(f"sklearn train accuracy: {accuracy:.2f}")
+
+    # Test set
+    net_pred = net.predict(X_test)
+    accuracy = np.mean(net_pred == y_test)
+    print(f"network test accuracy: {accuracy:.2f}")
+
+    mlp_pred = mlp.predict(X_test)
+    accuracy = np.mean(mlp_pred == y_test)
+    print(f"sklearn test accuracy: {accuracy:.2f}")
+
+>>>>>>> main

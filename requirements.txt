@@ -3,9 +3,14 @@ matplotlib
 pandas
 scipy
 scikit-learn
+<<<<<<< HEAD
 keras
 torch
 tqdm
+=======
+# tensorflow
+# torch
+>>>>>>> main
 ucimlrepo
 ipykernel
 notebook

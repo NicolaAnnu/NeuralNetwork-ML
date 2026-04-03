@@ -1,47 +1,54 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.datasets import load_breast_cancer
+from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
-from sklearn.neural_network import MLPClassifier
+from sklearn.neural_network import MLPRegressor
 from sklearn.preprocessing import StandardScaler
 
-from neural.network import Classifier
+from neural.network import Regressor
 
 if __name__ == "__main__":
-    X, y = [np.array(i) for i in load_breast_cancer(return_X_y=True)]
-    normalizer = StandardScaler()
-    X = normalizer.fit_transform(X)
+    X = np.linspace(-10, 10, 500)
+    y = 0.5 * X**3 - 1 * X**2 + X + 5 + np.random.normal(0, 50, 500)
+    X = X.reshape(-1, 1)
+
+    scaler = StandardScaler()
+    X = scaler.fit_transform(X)
+    y = scaler.fit_transform(y.reshape(-1, 1)).T[0]
+
     X_train, X_test, y_train, y_test = [
         np.array(i) for i in train_test_split(X, y, test_size=0.2)
     ]
 
-    topology = (8,)
+    topology = (10,)
     activation = "tanh"
-    learning_rate = 0.001
-    lam = 0.001
+    learning_rate = 0.05
+    lam = 0.0001
     alpha = 0.9
-    batch_size = 50
+    batch_size = 16
     max_iter = 1000
 
-    net = Classifier(
+    net = Regressor(
         hidden_layer_sizes=topology,
         activation=activation,
         learning_rate=learning_rate,
         lam=lam,
         alpha=alpha,
-        tol=1e-5,
         batch_size=batch_size,
+        shuffle=True,
         max_iter=max_iter,
     )
 
-    mlp = MLPClassifier(
+    mlp = MLPRegressor(
         hidden_layer_sizes=topology,
         activation=activation,
         solver="sgd",
         alpha=lam,
         learning_rate_init=learning_rate,
         momentum=alpha,
+        nesterovs_momentum=False,
         max_iter=max_iter,
+        batch_size=batch_size,
     )
 
     net.fit(X_train, y_train)
@@ -55,17 +62,28 @@ if __name__ == "__main__":
     plt.show()
 
     net_pred = net.predict(X_train)
-    accuracy = np.mean(net_pred == y_train)
+    accuracy = mean_squared_error(y_train, net_pred)
     print(f"network train accuracy: {accuracy:.2f}")
 
     mlp_pred = mlp.predict(X_train)
-    accuracy = np.mean(mlp_pred == y_train)
+    accuracy = mean_squared_error(y_train, mlp_pred)
     print(f"sklearn train accuracy: {accuracy:.2f}")
 
+    x = np.linspace(X.T[0].min() - 0.1, X.T[0].max() + 0.1, 100)
+    y_net = net.predict(x.reshape(-1, 1))
+    y_mlp = mlp.predict(x.reshape(-1, 1))
+
+    plt.scatter(X_train.T[0], y_train, c="k", ec="w", label="patterns")
+    plt.plot(x, y_net, "r-", label="network")
+    plt.plot(x, y_mlp, "b-", label="sklearn")
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
     net_pred = net.predict(X_test)
-    accuracy = np.mean(net_pred == y_test)
+    accuracy = mean_squared_error(y_test, net_pred)
     print(f"network test accuracy: {accuracy:.2f}")
 
     mlp_pred = mlp.predict(X_test)
-    accuracy = np.mean(mlp_pred == y_test)
+    accuracy = mean_squared_error(y_test, mlp_pred)
     print(f"sklearn test accuracy: {accuracy:.2f}")
