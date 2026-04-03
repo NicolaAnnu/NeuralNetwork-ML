@@ -1,18 +1,31 @@
 import argparse
+import json
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import (
+    ConfusionMatrixDisplay,
+    accuracy_score,
+    confusion_matrix,
+    f1_score,
+)
 from sklearn.preprocessing import OneHotEncoder
 
 from neural.network import Classifier
-from neural.utils import stats
+from neural.utils import dump_results, load_results
 from neural.validation import grid_search
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("id", type=int, help="monk dataset ID")
+    parser.add_argument("--gs", action="store_true", help="perform a grid search")
+    parser.add_argument(
+        "--save", action="store_true", help="save grid search results in a file"
+    )
+    parser.add_argument(
+        "--dask", type=str, default=None, help="perform a distributed grid search"
+    )
     args = parser.parse_args()
 
     train = pd.read_csv(f"datasets/monks_train{args.id}.csv")
@@ -25,96 +38,119 @@ if __name__ == "__main__":
 
     encoder = OneHotEncoder(sparse_output=False)
     X_train = encoder.fit_transform(X_train)
-    X_test = encoder.transform(X_test)
+    X_test = np.asarray(encoder.transform(X_test))
 
-<<<<<<< HEAD
-    hyperparams = {
-        "hidden_layer_sizes": [(3,)],
-        "activation": ["logistic", "tanh"],
-        "learning_rate": [0.01, 0.03],
-        "lam": [0.0, 0.0001],
-        "alpha": [0.9],
-        "tol": [1e-5],
-        "batch_size": [8, 16, 32, 64],
-        "shuffle": [False, True],
-        "max_iter": [1000],
-    }
+    if args.gs:
+        hyperparams = {
+            "hidden_layer_sizes": [(3,), (4,)],
+            "activation": ["leaky_relu", "tanh"],
+            "learning_rate": [0.01, 0.03, 0.05],
+            "lam": [0.0],
+            "alpha": [0.0],
+            "shuffle": [False, True],
+            "batch_size": [8, 16, 32],
+            "convergence": ["train_loss", "early_stopping"],
+            "patience": [10, 30],
+            "max_iter": [2000],
+        }
 
-    net, score = grid_search(
-        model_type=Classifier,
-        hyperparams=hyperparams,
-        X=X_train,
-        y=y_train,
-        k=10,
-        score_metric=accuracy_score,
-        verbose = False,
-    )
+        results = grid_search(
+            model=Classifier,
+            hyperparams=hyperparams,
+            X=X_train,
+            y=y_train,
+            k=15,
+            metric=accuracy_score,
+            scale=False,
+            address=args.dask,
+            verbose=True,
+        )
+
+        # save results to a json file
+        if args.save:
+            dump_results(f"results/monk{args.id}.json", results)
+
+    else:  # get params from last saved grid search
+        results = load_results(f"results/monk{args.id}.json")
+
+    results = [r for r in results if np.isfinite(r["score"])]
+    results = [r for r in results if np.isfinite(r["std"])]
+    best = sorted(results, key=lambda x: (x["score"], -x["std"]), reverse=True)[0]
+    print(f"validation score: {best['score']:.2f}")
+    print(f"validation std score: {best['std']:.2f}")
+    print(f"validation loss: {best['loss']:.2f}")
+
+    params = best["parameters"]
+    print(json.dumps(params, indent=2))
+
+    def accuracy_one_hot(y_true, y_pred):
+        # y_true è one-hot, y_pred sono classi
+        y_true_cls = np.argmax(y_true, axis=1)
+        return accuracy_score(y_true_cls, y_pred)
+
+    # re-train the model
+    net = Classifier(**params)
+    net.fit(X_train, y_train, accuracy_one_hot, X_val=X_test, y_val=y_test)
+
+    print(f"converged in {len(net.loss_curve)} epochs")
+    print(f"training loss: {net.loss:.4f}")
+    print(f"test loss: {net.val_loss:.4f}")
+
     # training accuracy
-    net_pred = net.predict(X_train)
-    train_score = accuracy_score(y_train, net_pred)
-    print(f"train accuracy: {train_score:.2f}")
+    y_pred = net.predict(X_train)
+    train_accuracy = accuracy_score(y_train, y_pred)
+    print(f"train accuracy: {train_accuracy:.2f}")
+
+    # train f1
+    train_f1 = f1_score(y_train, y_pred)
+    print(f"train f1: {train_f1:.2f}")
+
+    # train confusion matrix
+    train_cm = confusion_matrix(y_train, y_pred)
+    ConfusionMatrixDisplay(train_cm).plot()
+    plt.show()
 
     # test accuracy
-    net_pred = net.predict(X_test)
-    test_score = accuracy_score(y_test, net_pred)
-    print(f"test accuracy: {test_score:.2f}")
+    y_pred = net.predict(X_test)
+    test_accuracy = accuracy_score(y_test, y_pred)
+    print(f"test accuracy: {test_accuracy:.2f}")
 
-    # print stats and save results to json file
-    stats(
-        net,
-        hyperparams,
-        score,
-        train_score,
-        test_score,
-        f"results/monk{args.id}.json",
-=======
-    topology = (3,)
-    activation = "tanh"
-    learning_rate = 0.3
-    lam = 0.0001
-    alpha = 0.9
-    batch_size = 10
-    max_iter = 1000
+    # test f1
+    test_f1 = f1_score(y_test, y_pred)
+    print(f"test f1: {test_f1:.2f}")
 
-    net = Classifier(
-        hidden_layer_sizes=topology,
-        activation=activation,
-        learning_rate=learning_rate,
-        lam=lam,
-        alpha=alpha,
-        batch_size=-1,
-        shuffle=True,
-        max_iter=max_iter,
->>>>>>> main
-    )
+    # test confusion matrix
+    test_cm = confusion_matrix(y_test, y_pred)
+    ConfusionMatrixDisplay(test_cm).plot()
+    plt.show()
 
+    plt.figure(figsize=(6, 5), dpi=150)
     plt.title("Loss Curve")
-    plt.plot(net.loss_curve, label="loss")
+    plt.plot(net.loss_curve, label="training")
+    plt.plot(net.val_loss_curve, label="test")
     plt.xlabel("Epochs")
     plt.ylabel("Loss")
     plt.legend()
-<<<<<<< HEAD
     plt.tight_layout()
     plt.show()
-=======
+
+    plt.figure(figsize=(6, 5), dpi=150)
+    plt.title("Accuracy Curve")
+    plt.plot(net.score_curve, label="training")
+    plt.plot(net.val_score_curve, label="test")
+    plt.xlabel("Epochs")
+    plt.ylabel("Accuracy")
+    plt.legend()
+    plt.tight_layout()
     plt.show()
-    
-    # Network
-    net_pred = net.predict(X_train)
-    accuracy = np.mean(net_pred == y_train)
-    print(f"network train accuracy: {accuracy:.2f}")
 
-    mlp_pred = mlp.predict(X_train)
-    accuracy = np.mean(mlp_pred == y_train)
-    print(f"sklearn train accuracy: {accuracy:.2f}")
-
-    # Test set
-    net_pred = net.predict(X_test)
-    accuracy = np.mean(net_pred == y_test)
-    print(f"network test accuracy: {accuracy:.2f}")
-
-    mlp_pred = mlp.predict(X_test)
-    accuracy = np.mean(mlp_pred == y_test)
-    print(f"sklearn test accuracy: {accuracy:.2f}")
-
->>>>>>> main
+    # curves = {
+    #     "id": f"monk{args.id}",
+    #     "loss": net.loss_curve,
+    #     "val_loss": net.val_loss_curve,
+    #     "score": net.score_curve,
+    #     "val_score": net.val_score_curve,
+    # }
+    #
+    # with open(f"results/curves/monk{args.id}.json", "w") as fp:
+    #     json.dump(curves, fp, indent=2)
