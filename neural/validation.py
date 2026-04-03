@@ -3,7 +3,6 @@ from itertools import product
 from typing import Type
 
 import numpy as np
-from dask.distributed import Client, as_completed, progress
 from sklearn.preprocessing import StandardScaler
 
 from neural.network import Network
@@ -36,10 +35,10 @@ def train_and_score(
 ) -> dict:
     folds = kfold(X.shape[0], k)
 
-    # moving mask for validation split
     mask = np.array([False for _ in range(len(y))])
     scores = []
     losses = []
+
     for start, end in folds:
         mask[start:end] = True
 
@@ -49,7 +48,6 @@ def train_and_score(
         X_train = X[~mask]
         y_train = y[~mask]
 
-        # perform a scaling only on TR split and use the same scaler for VL
         if scale:
             X_scaler = StandardScaler()
             X_train = X_scaler.fit_transform(X_train)
@@ -76,7 +74,6 @@ def train_and_score(
                 params["limit"] = net.loss
 
         except Exception:
-            # if one fold crashes
             return {
                 "score": np.nan,
                 "std": np.nan,
@@ -104,17 +101,8 @@ def grid_search(
     k: int,
     metric,
     scale: bool = False,
-    address: None | str = None,  # for dask distributed grid search
     verbose: bool = False,
 ) -> list[dict]:
-    # dask init
-    if address:
-        client = Client(address)
-    else:
-        client = Client()
-
-    if verbose:
-        print(f"dask dashboard: {client.dashboard_link}")
 
     keys = list(hyperparams.keys())
     values = list(hyperparams.values())
@@ -127,32 +115,18 @@ def grid_search(
     params_list = [{k: v for k, v in zip(keys, comb)} for comb in combinations]
 
     start = time.perf_counter()
-    X_bc = client.scatter(X, broadcast=True)
-    y_bc = client.scatter(y, broadcast=True)
-
-    # start parallel grid search
-    futures = [
-        client.submit(
-            train_and_score, model, X_bc, y_bc, k, metric, scale, params, pure=False
-        )
-        for params in params_list
-    ]
-
-    # perform parallel k-folds
-    if verbose:
-        progress(futures)
 
     results = []
-    for future in as_completed(futures):
-        results.append(future.result())
-    client.close()
+    for i, params in enumerate(params_list):
+        if verbose:
+            print(f"Running {i+1}/{len(params_list)}")
+
+        result = train_and_score(model, X, y, k, metric, scale, params)
+        results.append(result)
+
     end = time.perf_counter()
 
-    # log some statistics
-    assert isinstance(results, list)
     if verbose:
-        failed = sum(r["score"] == -np.inf for r in results)
-        print(f"failed {failed} times")
         print(f"duration: {end - start:.2f} seconds")
 
     return results
