@@ -16,15 +16,19 @@ from neural.network import Classifier
 from neural.utils import dump_results, load_results
 from neural.validation import grid_search
 
+
+def accuracy_one_hot(y_true, y_pred):
+    if y_true.ndim > 1:
+        y_true = np.argmax(y_true, axis=1)
+    return accuracy_score(y_true, y_pred)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("id", type=int, help="monk dataset ID")
     parser.add_argument("--gs", action="store_true", help="perform a grid search")
     parser.add_argument(
         "--save", action="store_true", help="save grid search results in a file"
-    )
-    parser.add_argument(
-        "--dask", type=str, default=None, help="perform a distributed grid search"
     )
     args = parser.parse_args()
 
@@ -51,7 +55,7 @@ if __name__ == "__main__":
             "batch_size": [8, 16, 32],
             "convergence": ["train_loss", "early_stopping"],
             "patience": [10, 30],
-            "max_iter": [2000],
+            "max_iter": [800],
         }
 
         results = grid_search(
@@ -59,23 +63,35 @@ if __name__ == "__main__":
             hyperparams=hyperparams,
             X=X_train,
             y=y_train,
-            k=15,
-            metric=accuracy_score,
+            k=5,
+            metric=accuracy_one_hot,
             scale=False,
-            address=args.dask,
             verbose=True,
         )
 
-        # save results to a json file
         if args.save:
             dump_results(f"results/monk{args.id}.json", results)
 
-    else:  # get params from last saved grid search
+    else:
         results = load_results(f"results/monk{args.id}.json")
+
+        if isinstance(results, dict):
+            results = [results]
+
+        if not isinstance(results, list):
+            raise TypeError(f"Expected list of dicts, got {type(results)}")
+
+        print(type(results))
+        print(results[:2])
 
     results = [r for r in results if np.isfinite(r["score"])]
     results = [r for r in results if np.isfinite(r["std"])]
+
+    if not results:
+        raise RuntimeError("All grid search runs failed. Check the training errors above.")
+
     best = sorted(results, key=lambda x: (x["score"], -x["std"]), reverse=True)[0]
+
     print(f"validation score: {best['score']:.2f}")
     print(f"validation std score: {best['std']:.2f}")
     print(f"validation loss: {best['loss']:.2f}")
@@ -83,12 +99,6 @@ if __name__ == "__main__":
     params = best["parameters"]
     print(json.dumps(params, indent=2))
 
-    def accuracy_one_hot(y_true, y_pred):
-        # y_true è one-hot, y_pred sono classi
-        y_true_cls = np.argmax(y_true, axis=1)
-        return accuracy_score(y_true_cls, y_pred)
-
-    # re-train the model
     net = Classifier(**params)
     net.fit(X_train, y_train, accuracy_one_hot, X_val=X_test, y_val=y_test)
 
@@ -96,30 +106,24 @@ if __name__ == "__main__":
     print(f"training loss: {net.loss:.4f}")
     print(f"test loss: {net.val_loss:.4f}")
 
-    # training accuracy
     y_pred = net.predict(X_train)
     train_accuracy = accuracy_score(y_train, y_pred)
     print(f"train accuracy: {train_accuracy:.2f}")
 
-    # train f1
     train_f1 = f1_score(y_train, y_pred)
     print(f"train f1: {train_f1:.2f}")
 
-    # train confusion matrix
     train_cm = confusion_matrix(y_train, y_pred)
     ConfusionMatrixDisplay(train_cm).plot()
     plt.show()
 
-    # test accuracy
     y_pred = net.predict(X_test)
     test_accuracy = accuracy_score(y_test, y_pred)
     print(f"test accuracy: {test_accuracy:.2f}")
 
-    # test f1
     test_f1 = f1_score(y_test, y_pred)
     print(f"test f1: {test_f1:.2f}")
 
-    # test confusion matrix
     test_cm = confusion_matrix(y_test, y_pred)
     ConfusionMatrixDisplay(test_cm).plot()
     plt.show()
@@ -143,14 +147,3 @@ if __name__ == "__main__":
     plt.legend()
     plt.tight_layout()
     plt.show()
-
-    # curves = {
-    #     "id": f"monk{args.id}",
-    #     "loss": net.loss_curve,
-    #     "val_loss": net.val_loss_curve,
-    #     "score": net.score_curve,
-    #     "val_score": net.val_score_curve,
-    # }
-    #
-    # with open(f"results/curves/monk{args.id}.json", "w") as fp:
-    #     json.dump(curves, fp, indent=2)

@@ -17,12 +17,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--gs", action="store_true", help="perform a grid search")
     parser.add_argument("--save", action="store_true", help="save results in a file")
-    parser.add_argument(
-        "--dask", type=str, default=None, help="perform a distributed grid search"
-    )
     args = parser.parse_args()
 
-    # set headers
     names = ["ID"]
     features = [f"feature{i}" for i in range(12)]
     targets = [f"target{i}" for i in range(4)]
@@ -36,14 +32,13 @@ if __name__ == "__main__":
         skiprows=7,
     )
 
-    # get feature and target columns
     X = train.iloc[:, 1:13].to_numpy()
     y = train.iloc[:, 13:].to_numpy()
 
-    # stratified split
     y_scalar = np.linalg.norm(y, axis=1)
     bins = np.percentile(y_scalar, np.linspace(0, 100, 11))
     y_bins = np.digitize(y_scalar, bins[1:-1])
+
     X_train, X_test, y_train, y_test = [
         np.asarray(i)
         for i in train_test_split(
@@ -55,7 +50,6 @@ if __name__ == "__main__":
         )
     ]
 
-    # if --gs argument is passed the grid search is performed
     if args.gs:
         hyperparams = {
             "hidden_layer_sizes": [(64, 48, 32), (64, 64, 64)],
@@ -67,7 +61,7 @@ if __name__ == "__main__":
             "batch_size": [16, 64],
             "convergence": ["train_loss", "early_stopping"],
             "tol": [0.0, 1e-5],
-            "patience": [100],
+            "patience": [30],
             "max_iter": [2000],
         }
 
@@ -79,11 +73,9 @@ if __name__ == "__main__":
             k=10,
             metric=mean_euclidean_error,
             scale=True,
-            address=args.dask,
             verbose=True,
         )
 
-        # save results to a JSON file
         if args.save:
             dump_results("results/cup.json", results)
     else:
@@ -91,11 +83,11 @@ if __name__ == "__main__":
 
     results = [r for r in results if r["loss"] != np.inf]
     best = sorted(results, key=lambda x: x["score"])[0]
+
     print(f"grid search score: {best['score']:.2f}")
     print(f"grid search std score: {best['std']:.2f}")
     print(f"grid search loss: {best['loss']:.2f}")
 
-    # re-train the model
     params = best["parameters"]
     print(json.dumps(params, indent=2))
 
@@ -145,5 +137,4 @@ if __name__ == "__main__":
     plt.grid()
     plt.tight_layout()
     plt.show()
-
     target_plot(y_test, y_pred_test)

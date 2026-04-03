@@ -1,6 +1,7 @@
 import time
 from itertools import product
 from typing import Type
+import traceback
 
 import numpy as np
 from sklearn.preprocessing import StandardScaler
@@ -73,7 +74,9 @@ def train_and_score(
             if net.stopping.restore_weights:
                 params["limit"] = net.loss
 
-        except Exception:
+        except Exception as e:
+            print(f"\nError with params {params}: {e}")
+            traceback.print_exc()
             return {
                 "score": np.nan,
                 "std": np.nan,

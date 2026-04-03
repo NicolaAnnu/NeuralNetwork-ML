@@ -28,6 +28,10 @@ class Layer:
         self.momentum_w = np.zeros_like(self.W)
         self.momentum_b = np.zeros_like(self.b)
 
+        # initialize best weights
+        self.best_W = self.W.copy()
+        self.best_b = self.b.copy()
+
     def store_best(self) -> None:
         # store best weights
         self.best_W = self.W.copy()
@@ -35,6 +39,8 @@ class Layer:
 
     def load_best(self) -> None:
         # restore best weights
+        if not hasattr(self, "best_W") or not hasattr(self, "best_b"):
+            return
         self.W = self.best_W.copy()
         self.b = self.best_b.copy()
 
@@ -46,9 +52,6 @@ class Layer:
 
     def backward(self, dloss: np.ndarray) -> np.ndarray:
         delta = dloss * self.activation.derivative(self.net)
-
-        # compute the delta for the previous layer
-        delta_out = delta @ self.W.T
 
         # compute the delta for the previous layer
         delta_out = delta @ self.W.T
