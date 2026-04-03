@@ -1,78 +1,158 @@
+import time
 from itertools import product
+from typing import Type
+
 import numpy as np
-import multiprocessing as mp
-from tqdm import tqdm
-from neural.network import Classifier, Regressor
-    
+from dask.distributed import Client, as_completed, progress
+from sklearn.preprocessing import StandardScaler
+
+from neural.network import Network
+
+
+# creates k folds of same size (some fold could differ for 1 element)
 def kfold(n, k):
-      if k <= 0:
-          raise ValueError("error")
-      if k > n:
-          raise ValueError("error")
-      base, extra = divmod(n, k)
-      ranges, start = [], 0
-      for _ in range(k):
-          end = start + base + (1 if 0 < extra else 0)
-          ranges.append((start, end))
-          start = end
-      return ranges
+    min_size = n // k
+    carry = n % k
 
-def train_and_score(params, model_type, X, y, k, score_metric):
-    n = len(y)
-    indices = np.arange(n)
-    np.random.shuffle(indices)
+    ranges = []
+    start = 0
+    for _ in range(k):
+        end = start + min_size + (1 if carry > 0 else 0)
+        ranges.append([start, end])
+        start = end
+        carry -= 1
 
-    fold_sizes = np.full(k, n // k, dtype=int)
-    fold_sizes[: n % k] += 1
+    return ranges
 
-    current = 0
+
+def train_and_score(
+    model: Type[Network],
+    X: np.ndarray,
+    y: np.ndarray,
+    k: int,
+    metric,
+    scale: bool,
+    params: dict,
+) -> dict:
+    folds = kfold(X.shape[0], k)
+
+    # moving mask for validation split
+    mask = np.array([False for _ in range(len(y))])
     scores = []
+    losses = []
+    for start, end in folds:
+        mask[start:end] = True
 
-    for fold_size in fold_sizes:
-        start, end = current, current + fold_size
-        val_idx = indices[start:end]
-        train_idx = np.concatenate([indices[:start], indices[end:]])
+        X_val = X[mask]
+        y_val = y[mask]
 
-        model = model_type(**params)
-        model.fit(X[train_idx], y[train_idx])
-        preds = model.predict(X[val_idx])
-        scores.append(score_metric(y[val_idx], preds))
+        X_train = X[~mask]
+        y_train = y[~mask]
 
-        current = end
+        # perform a scaling only on TR split and use the same scaler for VL
+        if scale:
+            X_scaler = StandardScaler()
+            X_train = X_scaler.fit_transform(X_train)
+            X_val = np.asarray(X_scaler.transform(X_val))
 
-    return float(np.mean(scores))
+            y_scaler = StandardScaler()
+            y_train = y_scaler.fit_transform(y_train)
+            y_val = np.asarray(y_scaler.transform(y_val))
 
-def _score_params(args):
-      params, model_type, X, y, k, score_metric = args
-      return train_and_score(params, model_type, X, y, k, score_metric), params
+        net = model(**params)
+
+        try:
+            net.fit(X_train, y_train, metric, X_val=X_val, y_val=y_val)
+            predictions = net.predict(X_val)
+
+            if scale:
+                y_val = y_scaler.inverse_transform(y_val)
+                predictions = y_scaler.inverse_transform(predictions)
+
+            loss = np.mean((y_val - predictions) ** 2)
+            score = metric(y_val, predictions)
+
+            if net.stopping.restore_weights:
+                params["limit"] = net.loss
+
+        except Exception:
+            # if one fold crashes
+            return {
+                "score": np.nan,
+                "std": np.nan,
+                "loss": np.inf,
+                "parameters": params,
+            }
+
+        scores.append(score)
+        losses.append(loss)
+        mask[start:end] = False
+
+    return {
+        "score": np.mean(scores),
+        "std": np.std(scores),
+        "loss": np.mean(losses),
+        "parameters": params,
+    }
+
 
 def grid_search(
-      model_type,
-      hyperparams: dict,
-      X: np.ndarray,
-      y: np.ndarray,
-      k: int,
-      score_metric,
-  ) -> tuple[Classifier | Regressor, float]:
-      keys = list(hyperparams.keys())
-      values = list(hyperparams.values())
-      combinations = list(product(*values))
-      params = [{k: v for k, v in zip(keys, comb)} for comb in combinations]
+    model: Type[Network],
+    hyperparams: dict,
+    X: np.ndarray,
+    y: np.ndarray,
+    k: int,
+    metric,
+    scale: bool = False,
+    address: None | str = None,  # for dask distributed grid search
+    verbose: bool = False,
+) -> list[dict]:
+    # dask init
+    if address:
+        client = Client(address)
+    else:
+        client = Client()
 
-      n_cpus = mp.cpu_count()
-      tasks = [(p, model_type, X, y, k, score_metric) for p in params]
+    if verbose:
+        print(f"dask dashboard: {client.dashboard_link}")
 
-      scores_params = []
-      with mp.Pool(processes=n_cpus) as pool:
-          for score, param in tqdm(
-              pool.imap_unordered(_score_params, tasks),
-              total=len(tasks),
-              desc="grid search",
-              ncols=80,
-          ):
-              scores_params.append((score, param))
+    keys = list(hyperparams.keys())
+    values = list(hyperparams.values())
+    combinations = list(product(*values))
 
-      best_score, best_params = max(scores_params, key=lambda x: x[0])
-      model = model_type(**best_params)
-      model.fit(X, y)
-      return model, best_score
+    if verbose:
+        print(f"total combinations: {len(combinations)}")
+        print(f"total training: {len(combinations) * k}")
+
+    params_list = [{k: v for k, v in zip(keys, comb)} for comb in combinations]
+
+    start = time.perf_counter()
+    X_bc = client.scatter(X, broadcast=True)
+    y_bc = client.scatter(y, broadcast=True)
+
+    # start parallel grid search
+    futures = [
+        client.submit(
+            train_and_score, model, X_bc, y_bc, k, metric, scale, params, pure=False
+        )
+        for params in params_list
+    ]
+
+    # perform parallel k-folds
+    if verbose:
+        progress(futures)
+
+    results = []
+    for future in as_completed(futures):
+        results.append(future.result())
+    client.close()
+    end = time.perf_counter()
+
+    # log some statistics
+    assert isinstance(results, list)
+    if verbose:
+        failed = sum(r["score"] == -np.inf for r in results)
+        print(f"failed {failed} times")
+        print(f"duration: {end - start:.2f} seconds")
+
+    return results

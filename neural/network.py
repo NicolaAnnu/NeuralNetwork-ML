@@ -1,22 +1,26 @@
 import numpy as np
+from sklearn.preprocessing import OneHotEncoder
+from tqdm import trange
 
+from neural.convergence import get_criteria
 from neural.layer import Layer
 
 
 class Network:
     def __init__(
         self,
-        hidden_layer_sizes=(5,),
+        hidden_layer_sizes=(100,),
         activation: str = "logistic",
-        learning_rate: float = 0.1,
-        lam: float = 0.0001,  # regularization
-        alpha: float = 0.5,  # momentum
-        tol: float = 1e-4,
-        batch_size: int = 10,
+        learning_rate: float = 0.01,
+        lam: float = 0.0001,
+        alpha: float = 0.5,
         shuffle: bool = False,
-        early_stopping: bool = False,
-        validation_fraction: float = 0.1,
-        max_iter: int = 200,
+        batch_size: int = 64,
+        convergence: str = "train_loss",
+        tol: float = 1e-5,
+        patience: int = 10,
+        limit: float = -np.inf,
+        max_iter: int = 500,
     ) -> None:
         self.hidden_layer_sizes = hidden_layer_sizes
         self.layers = [
@@ -30,34 +34,47 @@ class Network:
             for units in hidden_layer_sizes
         ]
 
-        # initialize hidden layers weights
-        for i in range(1, len(self.layers), 1):
-            self.layers[i].init_weights(self.layers[i - 1].units)
-
         self.activation = activation
         self.learning_rate = learning_rate
         self.lam = lam
         self.alpha = alpha
-        self.tol = tol
-        self.batch_size = batch_size
         self.shuffle = shuffle
-        self.early_stopping = early_stopping
-        self.validation_fraction = validation_fraction
+        self.batch_size = batch_size
+
+        self.convergence = convergence
+        self.tol = tol
+        self.patience = patience
+        self.limit = limit
+        self.stopping = get_criteria(convergence, tol, patience, limit)
+
         self.max_iter = max_iter
 
-    def forward(self, X: np.ndarray) -> np.ndarray:
-        for l in self.layers:
-            X = l.forward(X)
+    def init_weights(self, input_size):
+        for layer in self.layers:
+            layer.init_weights(input_size)
+            input_size = layer.units
 
-        return X
+    def forward(self, X: np.ndarray) -> np.ndarray:
+        out = X.copy()
+        for layer in self.layers:
+            out = layer.forward(out)
+
+        return out
 
     def backward(self, dloss: np.ndarray) -> None:
-        for l in reversed(self.layers):
-            dloss = l.backward(dloss)
+        for layer in reversed(self.layers):
+            dloss = layer.backward(dloss)
 
-    def fit(self, X, y):
-        # initialize first layer weights
-        self.layers[0].init_weights(X.shape[1])
+    def fit(
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        metric,
+        X_val: None | np.ndarray = None,
+        y_val: None | np.ndarray = None,
+    ):
+        # initialize weights
+        self.init_weights(X.shape[1])
 
         if self.batch_size == -1:
             self.batch_size = X.shape[0]
@@ -66,54 +83,92 @@ class Network:
         indices = np.arange(X.shape[0])
 
         self.loss_curve = []
-        best_loss = np.inf
-        stop_counter = 0
-        for _ in range(self.max_iter):
+        self.score_curve = []
+        self.val_loss_curve = []
+        self.val_score_curve = []
+
+        best_epoch = 0
+        for epoch in trange(self.max_iter, ncols=80, desc="training progress"):
             # shuffle the indices
             if self.shuffle:
                 np.random.shuffle(indices)
 
-            epoch_loss = 0.0
-            for i in range(0, len(y), self.batch_size):
+            for i in range(0, y.shape[0], self.batch_size):
                 batch_idx = indices[i : i + self.batch_size]
                 out = self.forward(X[batch_idx])
-                error = out - y[batch_idx].reshape(-1, 1)
+                error = out - y[batch_idx]
 
                 # backpropagation
-                self.backward(2 * error / len(batch_idx))
-                epoch_loss += np.sum(error**2)
+                self.backward(2 * error / error.shape[1])
 
-            self.loss_curve.append(epoch_loss / len(y))
+            # training loss and score tracking
+            out = self.forward(X)
+            loss = np.mean((out - y) ** 2)
+            self.loss_curve.append(loss)
 
-            # stopping criteria
-            if (best_loss - self.loss_curve[-1]) < self.tol:
-                stop_counter += 1
+            pred = self.predict(X)
+            score = metric(y, pred)
+            self.score_curve.append(score)
+
+            # validation loss and score tracking
+            val_loss = None
+            val_score = None
+            if X_val is not None:
+                out = self.forward(X_val)
+                val_loss = np.mean((out - y_val) ** 2)
+                self.val_loss_curve.append(val_loss)
+
+                pred = self.predict(X_val)
+                val_score = metric(y_val, pred)
+                self.val_score_curve.append(val_score)
+
+            # convergence
+            if not self.stopping.should_stop(loss, val_loss):
+                if self.stopping.restore_weights and self.stopping.counter == 0:
+                    best_epoch = epoch
+                    for layer in self.layers:
+                        layer.store_best()
             else:
-                best_loss = self.loss_curve[-1]
-                stop_counter = 0
+                if self.stopping.restore_weights:
+                    for layer in self.layers:
+                        layer.load_best()
 
-            if stop_counter == 10:
+                    # cut curves after best epoch
+                    if best_epoch > 0:
+                        self.loss_curve = self.loss_curve[:best_epoch]
+                        self.val_loss_curve = self.val_loss_curve[:best_epoch]
+                        self.score_curve = self.score_curve[:best_epoch]
+                        self.val_score_curve = self.val_score_curve[:best_epoch]
+
                 break
+
+    def predict(self, X: np.ndarray) -> np.ndarray:
+        return self.forward(X)
 
     @property
     def loss(self) -> float:
         return self.loss_curve[-1]
 
+    @property
+    def val_loss(self) -> float:
+        return self.val_loss_curve[-1]
+
 
 class Classifier(Network):
     def __init__(
         self,
-        hidden_layer_sizes=(5,),
+        hidden_layer_sizes=(100,),
         activation: str = "logistic",
-        learning_rate: float = 0.1,
+        learning_rate: float = 0.01,
         lam: float = 0.0001,
         alpha: float = 0.5,
-        tol: float = 1e-4,
-        batch_size: int = 10,
         shuffle: bool = False,
-        early_stopping: bool = False,
-        validation_fraction: float = 0.1,
-        max_iter: int = 200,
+        batch_size: int = 64,
+        convergence: str = "train_loss",
+        tol: float = 1e-5,
+        patience: int = 10,
+        limit: float = -np.inf,
+        max_iter: int = 500,
     ) -> None:
         super().__init__(
             hidden_layer_sizes=hidden_layer_sizes,
@@ -121,47 +176,64 @@ class Classifier(Network):
             learning_rate=learning_rate,
             lam=lam,
             alpha=alpha,
-            tol=tol,
-            batch_size=batch_size,
             shuffle=shuffle,
-            early_stopping=early_stopping,
-            validation_fraction=validation_fraction,
+            batch_size=batch_size,
+            convergence=convergence,
+            tol=tol,
+            patience=patience,
+            limit=limit,
             max_iter=max_iter,
         )
 
-    def fit(self, X: np.ndarray, y: np.ndarray) -> None:
-        if not hasattr (self, "_has_output") or not self._has_output:
-            output = Layer(
-            units=1,
-            activation="logistic",
+    def fit(
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        metric,
+        X_val: None | np.ndarray = None,
+        y_val: None | np.ndarray = None,
+    ):
+        if len(y.shape) == 1:
+            y = y.reshape(-1, 1)
+
+        self.encoder = OneHotEncoder(sparse_output=False)
+        y = self.encoder.fit_transform(y)
+
+        if y_val is not None and len(y_val.shape) == 1:
+            y_val = y_val.reshape(-1, 1)
+            y_val = np.asarray(self.encoder.transform(y_val))
+
+        # add output layer with one logistic unit
+        output = Layer(
+            units=y.shape[1],
+            activation="linear",
             learning_rate=self.learning_rate,
             lam=self.lam,
             alpha=self.alpha,
         )
-        output.init_weights(self.layers[-1].units)
         self.layers.append(output)
-        self._has_output = True
+        super().fit(X, y, metric, X_val, y_val)
 
-        super().fit(X, y)
-
-    def predict(self, X: np.ndarray) -> np.ndarray:
-        return np.round(self.forward(X)[:, 0])
+    def predict(self, X):
+        y_hat = self.forward(X)  # (n_samples, K)
+        return np.argmax(y_hat, axis=1)
 
 
 class Regressor(Network):
     def __init__(
         self,
-        hidden_layer_sizes=(5,),
+        hidden_layer_sizes=(100,),
         activation: str = "logistic",
-        learning_rate: float = 0.1,
+        learning_rate: float = 0.01,
         lam: float = 0.0001,
         alpha: float = 0.5,
-        tol: float = 1e-4,
-        batch_size: int = 10,
         shuffle: bool = False,
-        early_stopping: bool = False,
-        validation_fraction: float = 0.1,
-        max_iter: int = 200,
+        batch_size: int = 64,
+        convergence: str = "train_loss",
+        tol: float = 1e-5,
+        patience: int = 10,
+        limit: float = -np.inf,
+        max_iter: int = 500,
     ) -> None:
         super().__init__(
             hidden_layer_sizes=hidden_layer_sizes,
@@ -169,25 +241,40 @@ class Regressor(Network):
             learning_rate=learning_rate,
             lam=lam,
             alpha=alpha,
-            tol=tol,
-            batch_size=batch_size,
             shuffle=shuffle,
-            early_stopping=early_stopping,
-            validation_fraction=validation_fraction,
+            batch_size=batch_size,
+            convergence=convergence,
+            tol=tol,
+            patience=patience,
+            limit=limit,
             max_iter=max_iter,
         )
 
-    def fit(self, X: np.ndarray, y: np.ndarray) -> None:
+    def fit(
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        metric,
+        X_val: None | np.ndarray = None,
+        y_val: None | np.ndarray = None,
+    ):
+        if len(y.shape) == 1:
+            y = y.reshape(-1, 1)
+
+        if y_val is not None:
+            if len(y_val.shape) == 1:
+                y_val = y_val.reshape(-1, 1)
+
+        # add the output layer with
         output = Layer(
-            units=1,
+            units=y.shape[1],
             activation="linear",
             learning_rate=self.learning_rate,
             lam=self.lam,
+            alpha=self.alpha,
         )
-        output.init_weights(self.layers[-1].units)
         self.layers.append(output)
-
-        super().fit(X, y)
+        super().fit(X, y, metric, X_val, y_val)
 
     def predict(self, X: np.ndarray) -> np.ndarray:
-        return self.forward(X)[:, 0]
+        return self.forward(X)
